@@ -1,0 +1,38 @@
+---
+title: "Project 1"
+author: "Chris Agular, Jason Pattison"
+format: html
+editor: visual
+---
+#Create libraries for use throughout program. 
+```{r}
+library(tidyverse)
+library(readr)
+```
+
+
+# Data Processing
+
+## First Steps. Read in one section of the data found at "https://www4.stat.ncsu.edu/~online/datasets/EDU01b.csv".
+
+### 1. Only select the columns: 
+> Area_name
+> STC0U
+> Any column that ends in "D"
+
+```{r}
+EDU01a <- read_csv("https://www4.stat.ncsu.edu/~online/datasets/EDU01b.csv",
+show_col_types = FALSE)
+
+EDU01a <- EDU01a |>
+  select("area_name" = Area_name, STCOU, ends_with(("D")) )
+
+EDU01a
+```
+
+## Requiremnets. Repeat Steps 1 through 6 above for the 2nd component of the data set, which can be found at "https://www4.stat.ncsu.edu/~online/datasets/EDU01b.csv"
+```{r}
+
+```
+
+
