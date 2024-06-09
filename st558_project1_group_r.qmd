@@ -19,6 +19,7 @@ library(tidyr)
 # step 1 and 2 and 3
 census_data <- read_csv("https://www4.stat.ncsu.edu/~online/datasets/EDU01a.csv") |> 
   select(Area_name, STCOU, ends_with("D")) |> # step 1
+  rename(area_name = Area_name) |> 
   pivot_longer(ends_with("D")) |> # step 2
   mutate(
     measurement = substr(name, 1, 7),
@@ -26,7 +27,7 @@ census_data <- read_csv("https://www4.stat.ncsu.edu/~online/datasets/EDU01a.csv"
 
 # step 4
 # Grabbing state indices so we can split the data between county/non-county data
-county_idx <-  grep(pattern = ", \\w\\w", census_data$Area_name)
+county_idx <-  grep(pattern = ", \\w\\w", census_data$area_name)
 
 # county-level data
 # using indices for county level, and omitting indices for non-county level data
@@ -41,10 +42,10 @@ class(census_non_county_lvl) <- c("state", class(census_non_county_lvl))
 # appending 2-char state abbreviation for county level data
 # stringr package allows us to index in reverse, no user defined function needed
 census_county_lvl <- census_county_lvl |> 
-  mutate(state = stringr::str_sub(Area_name, -2))
+  mutate(state = stringr::str_sub(area_name, -2))
 
 # step 6
-# Area_name has two versions of DC, which is in division 5. We'll standardize this. We assume these aren't true duplicates since STCOUs are different for upper, lowercase versions of DC.
+# area_name has two versions of DC, which is in division 5. We'll standardize this. We assume these aren't true duplicates since STCOUs are different for upper, lowercase versions of DC.
 # We'll also use built-in R variables to make a reference table for the regions.
 # This will make appending division to our non-county level data simpler.
 
@@ -59,8 +60,8 @@ state_ref_table <- data.frame(state = states_upper_case, division = states_divis
 # We do this by standardizing DC as upper case for the keys. Then, since factors can be a bit tricky, we convert to character type first. Lastly, any NAs are changed to ERROR as these don't correspond to any divisions, just "UNITED STATES"
 
 census_non_county_lvl <- census_non_county_lvl |> 
-  mutate(Area_name = toupper(Area_name)) |> 
-  left_join(state_ref_table, by = join_by(Area_name == state)) |>
+  mutate(area_name = toupper(area_name)) |> 
+  left_join(state_ref_table, by = join_by(area_name == state)) |>
   mutate(division = as.character(division),
          division = if_else(is.na(division), "ERROR", division))
 ```
@@ -68,17 +69,232 @@ census_non_county_lvl <- census_non_county_lvl |>
 
 ## Creating data preprocessing functions
 
-We'll take the above manual approach and break it up into a few data processing functions so we can reuse our code for any number of data sets.
+We'll create some functions to perform the following steps:
 
-```{r}
-1 + 1
+  1. Read in the census data and select `Area_name`, `STCOU`, and any column ending in "D". We'll also rename `Area_name` to `area_name`.
+  2. Convert the data into long format, keeping `Area_name` as the reference for our enrollment values.
+  3. A `name` column will create by default that contains the old column names. From these old column names, we'll extract the survey type and the year.
+  4. Create two data sets, one for county-level data and one for non-county data. We'll also add a `state` and `county` class to the relevant subsets of data.
+  5. For the county level data, we'll create a variable that corresponds to the state a county belongs to.
+  6. For non-county level data, we'll create a variable that corresponds to the [state's classification of division].(https://en.wikipedia.org/wiki/List_of_regions_of_the_United_States)
+
+### Steps 1-2
+
+We'll start with a function for steps 1-2. We'll provide an optional argument that allows us to provide a name for the default `value` column that is created by `pivot_longer`.
+
+```{r steps 1-2}
+
+library(readr)
+library(dplyr)
+library(tidyr)
+
+# step 1 and 2
+
+url <- "https://www4.stat.ncsu.edu/~online/datasets/EDU01a.csv"
+default_var_name <- "value"
+
+read_and_pivot <- function(url, default_var_name = "value") {
+  
+  census_data <- read_csv(url) |> 
+    select(Area_name, STCOU, ends_with("D")) |> # step 1
+    rename(area_name = Area_name) |> 
+    pivot_longer(ends_with("D"), values_to = default_var_name) # step 2
+  
+  census_data
+}
+
 ```
 
-You can add options to executable code like this
+### Step 3
 
-```{r}
-#| echo: false
-2 * 2
+From the default `name` column created by `pivot_longer` that captures the variable names ending in "D", we'll extract the survey type and year, which will be reflected by the `measurement` and `year` columns created, respectively.
+
+We have to be careful, however. The exploration isn't done here, but `EDU01a.csv` data captures the years 1987 - 1996, where the `EDU01b.csv` data captures the years 1997-2006. So we need to account for the millennium we're in.
+
+```{r step 3}
+
+extract_survey_and_year <- function(df) {
+  
+  res <- df |>
+  mutate(
+      measurement = substr(name, 1, 7),
+      # year = paste0("19", substr(name, 8, 9)) |> as.integer())
+      year = ifelse(
+        substr(name, 8, 8) %in% c("8", "9"), paste0("19", substr(name, 8, 9)) |> as.integer(),
+        ifelse(
+          substr(name, 8, 8) %in% c("0", "1"), paste0("20", substr(name, 8, 9)) |> as.integer(),
+          NA)
+        )
+  )
+  
+  res
+}
+
 ```
 
-The `echo: false` option disables the printing of code (only output is displayed).
+### Step 5
+
+The data from step 3 above will result in a data frame with county-level and non-county level data, each of which will require different prep methods. Here, we'll create a function to extract the county-level state from `area_name`.
+
+```{r step 5}
+
+library(stringr)
+
+# stringr's str_sub allows us to substring in reverse, easier than base R's substr
+extract_state_from_area <- function(census_county_lvl) {
+  res <- census_county_lvl |> 
+    mutate(state = stringr::str_sub(area_name, -2)) # grab last two characters
+  
+  res
+}
+
+```
+
+### Step 6
+
+For non-county level data, we'll create a function that assigns a variable that corresponds to the [state's classification of division].(https://en.wikipedia.org/wiki/List_of_regions_of_the_United_States)
+
+The approach we take will make use of some built-in state data in R.
+
+```{r step 6}
+
+# step 6
+# area_name has two versions of DC, uppercase and lowercase, which is in division 5. We'll standardize this. 
+# We assume these aren't true duplicates since STCOUs are different for upper, lowercase versions of DC.
+# We'll also use built-in R variables to make a reference table for the regions.
+# This will make appending division to our non-county level data simpler.
+
+assign_state_divisions <- function(census_non_county_lvl) {
+  # Making reference table
+  # Upper casing state names for table join later
+  states_upper_case <- c(toupper(state.name), "DISTRICT OF COLUMBIA") # DC doesn't exist in this vector, so we add it
+  states_division <- c(state.division, factor("South Atlantic")) # Adding DC's division level to factor vector of divisions
+  
+  state_ref_table <- data.frame(state = states_upper_case, division = states_division)
+  
+  # We'll join our state reference table to our census data to append divisions.
+  # We do this by standardizing DC as upper case for the keys. Then, since factors can be a bit tricky, we convert to character type first. Lastly, any NAs are changed to ERROR as these don't correspond to any state divisions
+  
+  res <- census_non_county_lvl |> 
+    mutate(area_name = toupper(area_name)) |> 
+    left_join(state_ref_table, by = join_by(area_name == state)) |>
+    mutate(division = as.character(division),
+           division = if_else(is.na(division), "ERROR", division))
+  
+  res
+}
+
+```
+
+### Putting steps 4, 5, and 6 together
+
+We mentioned that the data has county-level and non-county-level data that needs to be addressed separately. Functions for steps 5 and 6 do this. We now address step 4, which is splitting the data into county and non-county level data. We'll combine this right into steps 5 and 6 below.
+
+```{r steps 4 5 6}
+
+split_census_data <- function(census_data) {
+  
+  # step 4
+  
+  # Grabbing state indices so we can split the data between county/non-county data
+  # This is because county-level data follows the pattern "County, DD"
+  # DD is the state abbreviation.
+  county_idx <-  grep(pattern = ", \\w\\w", census_data$area_name)
+  
+  # using indices for county level, and omitting indices for non-county level data
+  census_county_lvl <- census_data[county_idx, ]
+  census_non_county_lvl <- census_data[-county_idx, ]
+  
+  # New classes for new methods later
+  class(census_county_lvl) <- c("county", class(census_county_lvl))
+  class(census_non_county_lvl) <- c("state", class(census_non_county_lvl))
+  
+  # step 5
+  
+  # applying step 5 for county level data
+  county_res <- extract_state_from_area(census_county_lvl)
+  
+  # step 6
+  
+  # applying step 6 for non-county level data
+  state_res <- assign_state_divisions(census_non_county_lvl)
+  
+  full_res <- list(county_data = county_res, state_data = state_res)
+  
+  full_res
+}
+
+
+```
+
+### Combining steps 1-6 in a wrapper function
+
+We'll now create a wrapper function that combines the functions created above into one call. It'll take as input the data's url, and an optional argument for the `value` column name created by `pivot_longer`.
+
+```{r wrapper function}
+
+
+prepare_census_data <- function(url, default_var_name = "value") {
+  
+  res <- read_and_pivot(url, default_var_name) |> # step 1, 2 
+    extract_survey_and_year() |> # step 3
+    split_census_data() # step 4, 5, 6
+  
+  res
+}
+
+```
+
+### Using wrapper function for Census data
+
+We'll be calling our wrapper function above on the following two datasets:
+  
+  1. `https://www4.stat.ncsu.edu/~online/datasets/EDU01a.csv`
+  2. `https://www4.stat.ncsu.edu/~online/datasets/EDU01b.csv`
+
+Then we'll be combining the county- and state-level results from each appropriately.
+
+```{r combining data}
+
+# Reading in and prepping the two EDU01 census .csv files given
+
+census_edu01a <- prepare_census_data("https://www4.stat.ncsu.edu/~online/datasets/EDU01a.csv", "enrollment")
+
+census_edu01b <- prepare_census_data("https://www4.stat.ncsu.edu/~online/datasets/EDU01b.csv", "enrollment")
+
+# helper function to combine the two sets of data
+combine_data <- function(list_of_dfs1, list_of_dfs2) {
+  
+  # county
+  county_res <- bind_rows(list_of_dfs1$county_data, list_of_dfs2$county_data)
+  
+  # state
+  state_res <- bind_rows(list_of_dfs1$state_data, list_of_dfs2$state_data)
+  
+  res <- list(county_data = county_res, state_data = state_res)
+  
+  res
+}
+```
+
+We now call our `combine_data` function to save the results of the prepared `EDU01a` and `EDU01b` data sets into a two-element list of dataframes, where each element of the list corresponds to combined county-level and state-level data.
+
+```{r data ready for use}
+
+census_data <- combine_data(census_edu01a, census_edu01b)
+
+census_data
+```
+
+We are now ready to analyze this data.
+
+## TO DO
+
+Read pages 4-5 of the Project 1 .pdf file and follow the instructions therein. DO NOT RENDER ANYTHING YET, just focus on getting the code to run as instructed. I'm happy to help walk/talk you through anything that is difficult, don't hesitate to ask. We can set some time up to work on it live.
+
+For every milestone (project step), commit (but don't push yet) any changes. Once we make sure all steps work as planned, we can then do a file commit/push to Github. I'm not a Github expert so I think this approach will save us headaches trying to debug any Github issues.
+
+```{r}
+# Begin coding
+```
+
