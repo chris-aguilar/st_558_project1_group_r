@@ -101,7 +101,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 </header>
 
-<p>#Create libraries for use throughout program.</p>
+<section id="create-libraries-for-use-throughout-program." class="level1">
+<h1>Create libraries for use throughout program.</h1>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
@@ -139,6 +140,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readr)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
+</section>
 <section id="data-processing" class="level1">
 <h1>Data Processing</h1>
 <section id="first-steps.-read-in-one-section-of-the-data-found-at-httpswww4.stat.ncsu.eduonlinedatasetsedu01b.csv." class="level2">
@@ -174,6 +176,17 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 # ℹ 5 more variables: EDU010202D &lt;dbl&gt;, EDU015203D &lt;dbl&gt;, EDU015204D &lt;dbl&gt;,
 #   EDU015205D &lt;dbl&gt;, EDU015206D &lt;dbl&gt;</code></pre>
 </div>
+</div>
+</section>
+<section id="convert-the-data-into-long-format-where-each-row-has-only-one-value-for-that-area_name" class="level3">
+<h3 class="anchored" data-anchor-id="convert-the-data-into-long-format-where-each-row-has-only-one-value-for-that-area_name">2. Convert the data into long format where each row has only one value for that area_name</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>EDU01a <span class="ot">&lt;-</span> EDU01a <span class="sc">|&gt;</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">cols =</span> <span class="dv">3</span><span class="sc">:</span><span class="dv">12</span>,</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">names_to =</span>  <span class="st">"EDU_Code"</span>,</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">values_to =</span> <span class="st">"Area_EDU_Total"</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>               )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 </section>
