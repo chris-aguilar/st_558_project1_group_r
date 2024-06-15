@@ -26,26 +26,5 @@
     "title": "ST 558 Project 1, Group R",
     "section": "TO DO",
     "text": "TO DO\nRead pages 4-5 of the Project 1 .pdf file and follow the instructions therein. DO NOT RENDER ANYTHING YET, just focus on getting the code to run as instructed. I’m happy to help walk/talk you through anything that is difficult, don’t hesitate to ask. We can set some time up to work on it live.\nFor every milestone (project step), commit (but don’t push yet) any changes. Once we make sure all steps work as planned, we can then do a file commit/push to Github. I’m not a Github expert so I think this approach will save us headaches trying to debug any Github issues.\n\n# Begin coding"
-  },
-  {
-    "objectID": "project1.html",
-    "href": "project1.html",
-    "title": "Project 1",
-    "section": "",
-    "text": "library(tidyverse)\n\n── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──\n✔ dplyr     1.1.4     ✔ readr     2.1.5\n✔ forcats   1.0.0     ✔ stringr   1.5.1\n✔ ggplot2   3.5.1     ✔ tibble    3.2.1\n✔ lubridate 1.9.3     ✔ tidyr     1.3.1\n✔ purrr     1.0.2     \n── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──\n✖ dplyr::filter() masks stats::filter()\n✖ dplyr::lag()    masks stats::lag()\nℹ Use the conflicted package (&lt;http://conflicted.r-lib.org/&gt;) to force all conflicts to become errors\n\nlibrary(readr)"
-  },
-  {
-    "objectID": "project1.html#first-steps.-read-in-one-section-of-the-data-found-at-httpswww4.stat.ncsu.eduonlinedatasetsedu01b.csv.",
-    "href": "project1.html#first-steps.-read-in-one-section-of-the-data-found-at-httpswww4.stat.ncsu.eduonlinedatasetsedu01b.csv.",
-    "title": "Project 1",
-    "section": "First Steps. Read in one section of the data found at “https://www4.stat.ncsu.edu/~online/datasets/EDU01b.csv”.",
-    "text": "First Steps. Read in one section of the data found at “https://www4.stat.ncsu.edu/~online/datasets/EDU01b.csv”.\n\n1. Only select the columns:\n\nArea_name STC0U Any column that ends in “D”\n\n\nEDU01a &lt;- read_csv(\"https://www4.stat.ncsu.edu/~online/datasets/EDU01b.csv\",\nshow_col_types = FALSE)\n\nEDU01a &lt;- EDU01a |&gt;\n  select(\"area_name\" = Area_name, STCOU, ends_with((\"D\")) )\n\nEDU01a\n\n# A tibble: 3,198 × 12\n   area_name     STCOU EDU010197D EDU010198D EDU010199D EDU010200D EDU010201D\n   &lt;chr&gt;         &lt;chr&gt;      &lt;dbl&gt;      &lt;dbl&gt;      &lt;dbl&gt;      &lt;dbl&gt;      &lt;dbl&gt;\n 1 UNITED STATES 00000   44534459   46245814   46368903   46818690   47127066\n 2 ALABAMA       01000     737386     739321     737639     731613     730627\n 3 Autauga, AL   01001       8099       8211       8489       8912       8626\n 4 Baldwin, AL   01003      21410      21771      22176      22337      22656\n 5 Barbour, AL   01005       5100       5024       4906       4793       4671\n 6 Bibb, AL      01007       3717       3760       3689       3646       3556\n 7 Blount, AL    01009       7816       8054       8135       8346       8517\n 8 Bullock, AL   01011       2010       1989       1945       1953       1981\n 9 Butler, AL    01013       4119       3989       3850       3665       3632\n10 Calhoun, AL   01015      19721      19565      19267      18291      18175\n# ℹ 3,188 more rows\n# ℹ 5 more variables: EDU010202D &lt;dbl&gt;, EDU015203D &lt;dbl&gt;, EDU015204D &lt;dbl&gt;,\n#   EDU015205D &lt;dbl&gt;, EDU015206D &lt;dbl&gt;\n\n\n\n\n2. Convert the data into long format where each row has only one value for that area_name\n\nEDU01a |&gt;\n  pivot_longer(\n    cols = 3:12,\n    names_to =  \"EDU_Code\",\n    values_to = \"Area_EDU_Total\"\n               )\n\n# A tibble: 31,980 × 4\n   area_name     STCOU EDU_Code   Area_EDU_Total\n   &lt;chr&gt;         &lt;chr&gt; &lt;chr&gt;               &lt;dbl&gt;\n 1 UNITED STATES 00000 EDU010197D       44534459\n 2 UNITED STATES 00000 EDU010198D       46245814\n 3 UNITED STATES 00000 EDU010199D       46368903\n 4 UNITED STATES 00000 EDU010200D       46818690\n 5 UNITED STATES 00000 EDU010201D       47127066\n 6 UNITED STATES 00000 EDU010202D       47606570\n 7 UNITED STATES 00000 EDU015203D       48506317\n 8 UNITED STATES 00000 EDU015204D       48693287\n 9 UNITED STATES 00000 EDU015205D       48978555\n10 UNITED STATES 00000 EDU015206D       49140702\n# ℹ 31,970 more rows"
-  },
-  {
-    "objectID": "project1.html#requiremnets.-repeat-steps-1-through-6-above-for-the-2nd-component-of-the-data-set-which-can-be-found-at-httpswww4.stat.ncsu.eduonlinedatasetsedu01b.csv",
-    "href": "project1.html#requiremnets.-repeat-steps-1-through-6-above-for-the-2nd-component-of-the-data-set-which-can-be-found-at-httpswww4.stat.ncsu.eduonlinedatasetsedu01b.csv",
-    "title": "Project 1",
-    "section": "Requiremnets. Repeat Steps 1 through 6 above for the 2nd component of the data set, which can be found at “https://www4.stat.ncsu.edu/~online/datasets/EDU01b.csv”",
-    "text": "Requiremnets. Repeat Steps 1 through 6 above for the 2nd component of the data set, which can be found at “https://www4.stat.ncsu.edu/~online/datasets/EDU01b.csv”"
   }
 ]
