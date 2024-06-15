@@ -15,6 +15,7 @@ First, we'll read in and prep the data manually. Afterward, we'll put those manu
 library(readr)
 library(dplyr)
 library(tidyr)
+library(ggplot2)
 
 # step 1 and 2 and 3
 census_data <- read_csv("https://www4.stat.ncsu.edu/~online/datasets/EDU01a.csv") |> 
@@ -66,17 +67,16 @@ census_non_county_lvl <- census_non_county_lvl |>
          division = if_else(is.na(division), "ERROR", division))
 ```
 
-
 ## Creating data preprocessing functions
 
 We'll create some functions to perform the following steps:
 
-  1. Read in the census data and select `Area_name`, `STCOU`, and any column ending in "D". We'll also rename `Area_name` to `area_name`.
-  2. Convert the data into long format, keeping `Area_name` as the reference for our enrollment values.
-  3. A `name` column will create by default that contains the old column names. From these old column names, we'll extract the survey type and the year.
-  4. Create two data sets, one for county-level data and one for non-county data. We'll also add a `state` and `county` class to the relevant subsets of data.
-  5. For the county level data, we'll create a variable that corresponds to the state a county belongs to.
-  6. For non-county level data, we'll create a variable that corresponds to the [state's classification of division].(https://en.wikipedia.org/wiki/List_of_regions_of_the_United_States)
+1.  Read in the census data and select `Area_name`, `STCOU`, and any column ending in "D". We'll also rename `Area_name` to `area_name`.
+2.  Convert the data into long format, keeping `Area_name` as the reference for our enrollment values.
+3.  A `name` column will create by default that contains the old column names. From these old column names, we'll extract the survey type and the year.
+4.  Create two data sets, one for county-level data and one for non-county data. We'll also add a `state` and `county` class to the relevant subsets of data.
+5.  For the county level data, we'll create a variable that corresponds to the state a county belongs to.
+6.  For non-county level data, we'll create a variable that corresponds to the \[state's classification of division\].(https://en.wikipedia.org/wiki/List_of_regions_of_the_United_States)
 
 ### Steps 1-2
 
@@ -152,7 +152,7 @@ extract_state_from_area <- function(census_county_lvl) {
 
 ### Step 6
 
-For non-county level data, we'll create a function that assigns a variable that corresponds to the [state's classification of division].(https://en.wikipedia.org/wiki/List_of_regions_of_the_United_States)
+For non-county level data, we'll create a function that assigns a variable that corresponds to the \[state's classification of division\].(https://en.wikipedia.org/wiki/List_of_regions_of_the_United_States)
 
 The approach we take will make use of some built-in state data in R.
 
@@ -248,9 +248,9 @@ prepare_census_data <- function(url, default_var_name = "value") {
 ### Using wrapper function for Census data
 
 We'll be calling our wrapper function above on the following two datasets:
-  
-  1. `https://www4.stat.ncsu.edu/~online/datasets/EDU01a.csv`
-  2. `https://www4.stat.ncsu.edu/~online/datasets/EDU01b.csv`
+
+1.  `https://www4.stat.ncsu.edu/~online/datasets/EDU01a.csv`
+2.  `https://www4.stat.ncsu.edu/~online/datasets/EDU01b.csv`
 
 Then we'll be combining the county- and state-level results from each appropriately.
 
@@ -294,7 +294,22 @@ Read pages 4-5 of the Project 1 .pdf file and follow the instructions therein. D
 
 For every milestone (project step), commit (but don't push yet) any changes. Once we make sure all steps work as planned, we can then do a file commit/push to Github. I'm not a Github expert so I think this approach will save us headaches trying to debug any Github issues.
 
-```{r}
+```{r state class plot}
 # Begin coding
-```
 
+plot.state <- function(df, var_name = "enrollment"){
+  
+state_variable_mean <- df[[2]] |>
+    filter(division != "ERROR") |>
+    group_by(division, year, get(var_name)) |>
+    summarize("mean" = mean(get(var_name)))
+
+ggplot(state_variable_mean, aes(year, mean)) +
+  geom_point (aes(color=division)) +
+  labs(x = "year", y = "mean")
+
+}
+
+plot.state(census_data)
+
+```
