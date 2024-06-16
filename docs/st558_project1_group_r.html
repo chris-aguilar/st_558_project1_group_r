@@ -272,7 +272,7 @@ dbl (20): EDU010187F, EDU010187D, EDU010188F, EDU010188D, EDU010189F, EDU010...
 <span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>      <span class="at">measurement =</span> <span class="fu">substr</span>(name, <span class="dv">1</span>, <span class="dv">7</span>),</span>
 <span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>      <span class="co"># year = paste0("19", substr(name, 8, 9)) |&gt; as.integer())</span></span>
 <span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>      <span class="at">year =</span> <span class="fu">ifelse</span>(</span>
-<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>        <span class="fu">substr</span>(name, <span class="dv">8</span>, <span class="dv">8</span>) <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"8"</span>, <span class="st">"9"</span>), <span class="fu">paste0</span>(<span class="st">"19"</span>, <span class="fu">substr</span>(name, <span class="dv">8</span>, <span class="dv">9</span>)) <span class="sc">|&gt;</span> <span class="fu">as.integer</span>(),</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>        <span class="fu">substr</span>(name, <span class="dv">8</span>, <span class="dv">8</span>) <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"4"</span>, <span class="st">"5"</span>, <span class="st">"6"</span>, <span class="st">"7"</span>, <span class="st">"8"</span>, <span class="st">"9"</span>), <span class="fu">paste0</span>(<span class="st">"19"</span>, <span class="fu">substr</span>(name, <span class="dv">8</span>, <span class="dv">9</span>)) <span class="sc">|&gt;</span> <span class="fu">as.integer</span>(),</span>
 <span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>        <span class="fu">ifelse</span>(</span>
 <span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>          <span class="fu">substr</span>(name, <span class="dv">8</span>, <span class="dv">8</span>) <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"0"</span>, <span class="st">"1"</span>), <span class="fu">paste0</span>(<span class="st">"20"</span>, <span class="fu">substr</span>(name, <span class="dv">8</span>, <span class="dv">9</span>)) <span class="sc">|&gt;</span> <span class="fu">as.integer</span>(),</span>
 <span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>          <span class="cn">NA</span>)</span>
@@ -371,7 +371,7 @@ dbl (20): EDU010187F, EDU010187D, EDU010188F, EDU010188D, EDU010189F, EDU010...
 <h3 class="anchored" data-anchor-id="combining-steps-1-6-in-a-wrapper-function">Combining steps 1-6 in a wrapper function</h3>
 <p>We’ll now create a wrapper function that combines the functions created above into one call. It’ll take as input the data’s url, and an optional argument for the <code>value</code> column name created by <code>pivot_longer</code>.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>prepare_census_data <span class="ot">&lt;-</span> <span class="cf">function</span>(url, <span class="at">default_var_name =</span> <span class="st">"value"</span>) {</span>
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>prepare_census_data <span class="ot">&lt;-</span> <span class="cf">function</span>(url, <span class="at">default_var_name =</span> <span class="st">"enrollment"</span>) {</span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  </span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  res <span class="ot">&lt;-</span> <span class="fu">read_and_pivot</span>(url, default_var_name) <span class="sc">|&gt;</span> <span class="co"># step 1, 2 </span></span>
 <span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">extract_survey_and_year</span>() <span class="sc">|&gt;</span> <span class="co"># step 3</span></span>
@@ -472,37 +472,39 @@ $state_data
 </section>
 <section id="class-state" class="level1">
 <h1>Class: State</h1>
-<p>For the State class plotting method we’ve developed a function that plots the mean value of enrollment across the years for each Division. The twenty “Error” values for Division have been removed in generating the subset prior to plotting the data.</p>
+<p>For the State class plotting method we’ve developed a function that plots the mean value of the variable of interest, in this case <code>enrollment</code>, across the years for each Division. The twenty “Error” values for Division have been removed in generating the subset prior to plotting the data.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co"># specify data frame, default variable name, </span></span>
 <span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>plot.state <span class="ot">&lt;-</span> <span class="cf">function</span>(df, <span class="at">var_name =</span> <span class="st">"enrollment"</span>){</span>
 <span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>  </span>
 <span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a><span class="co"># create subset data for plotting</span></span>
-<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>state_variable_plot <span class="ot">&lt;-</span> df[[<span class="dv">2</span>]] <span class="sc">|&gt;</span></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>state_variable_plot <span class="ot">&lt;-</span> df<span class="sc">$</span>state_data <span class="sc">|&gt;</span></span>
 <span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a><span class="co"># remove the error values</span></span>
 <span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(division <span class="sc">!=</span> <span class="st">"ERROR"</span>) <span class="sc">|&gt;</span>  </span>
 <span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a><span class="co"># subset the data to the variables of interest</span></span>
-<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a>    <span class="fu">group_by</span>(division, year, <span class="fu">get</span>(var_name)) <span class="sc">|&gt;</span> </span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a>    <span class="fu">group_by</span>(division, year) <span class="sc">|&gt;</span> </span>
 <span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a>  <span class="co">#create the mean statistic for plotting</span></span>
-<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a>    <span class="fu">summarize</span>(<span class="st">"mean_enrollment"</span> <span class="ot">=</span> <span class="fu">mean</span>(<span class="fu">get</span>(var_name)))</span>
+<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a>    <span class="fu">summarize</span>(<span class="st">"mean_value"</span> <span class="ot">=</span> <span class="fu">mean</span>(<span class="fu">get</span>(var_name)))</span>
 <span id="cb22-14"><a href="#cb22-14" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb22-15"><a href="#cb22-15" aria-hidden="true" tabindex="-1"></a><span class="co"># generate the plot of year vs mean</span></span>
-<span id="cb22-16"><a href="#cb22-16" aria-hidden="true" tabindex="-1"></a>  g_state <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(state_variable_plot, <span class="fu">aes</span>(year, mean_enrollment, <span class="at">color=</span>division)) </span>
+<span id="cb22-16"><a href="#cb22-16" aria-hidden="true" tabindex="-1"></a>  g_state <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(state_variable_plot, <span class="fu">aes</span>(year, mean_value, <span class="at">color=</span>division)) </span>
 <span id="cb22-17"><a href="#cb22-17" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb22-18"><a href="#cb22-18" aria-hidden="true" tabindex="-1"></a><span class="co"># plot the division values</span></span>
-<span id="cb22-19"><a href="#cb22-19" aria-hidden="true" tabindex="-1"></a>  g_state <span class="sc">+</span> <span class="fu">geom_point</span>() <span class="sc">+</span></span>
-<span id="cb22-20"><a href="#cb22-20" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb22-21"><a href="#cb22-21" aria-hidden="true" tabindex="-1"></a><span class="co"># assign labels to the x and y axis</span></span>
-<span id="cb22-22"><a href="#cb22-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"year"</span>, <span class="at">y =</span> <span class="st">"mean_enrollment"</span>)</span>
-<span id="cb22-23"><a href="#cb22-23" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb22-24"><a href="#cb22-24" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb22-25"><a href="#cb22-25" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb22-26"><a href="#cb22-26" aria-hidden="true" tabindex="-1"></a><span class="fu">plot.state</span>(census_data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb22-19"><a href="#cb22-19" aria-hidden="true" tabindex="-1"></a>  g_state <span class="sc">+</span> </span>
+<span id="cb22-20"><a href="#cb22-20" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_line</span>() <span class="sc">+</span></span>
+<span id="cb22-21"><a href="#cb22-21" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">title =</span> <span class="fu">paste</span>(<span class="st">"Average yearly"</span>, var_name, <span class="st">"by state division"</span>)) <span class="sc">+</span></span>
+<span id="cb22-22"><a href="#cb22-22" aria-hidden="true" tabindex="-1"></a>    <span class="fu">xlab</span>(<span class="st">"Year"</span>) <span class="sc">+</span></span>
+<span id="cb22-23"><a href="#cb22-23" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ylab</span>(<span class="fu">paste</span>(<span class="st">"Average"</span>, var_name))</span>
+<span id="cb22-24"><a href="#cb22-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-25"><a href="#cb22-25" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb22-26"><a href="#cb22-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-27"><a href="#cb22-27" aria-hidden="true" tabindex="-1"></a><span class="co"># Calling on a dataframe of class "state" with a default variable-of-interest called "enrollment"</span></span>
+<span id="cb22-28"><a href="#cb22-28" aria-hidden="true" tabindex="-1"></a><span class="fu">plot.state</span>(census_data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
-<pre><code>`summarise()` has grouped output by 'division', 'year'. You can override using
-the `.groups` argument.</code></pre>
+<pre><code>`summarise()` has grouped output by 'division'. You can override using the
+`.groups` argument.</code></pre>
 </div>
 <div class="cell-output-display">
 <div>
@@ -515,52 +517,52 @@ the `.groups` argument.</code></pre>
 </section>
 <section id="class-county" class="level1">
 <h1>Class: County</h1>
+<p>Next we created a similar plotting function with more flexiblity. The plotting funciton allows the user to specify a state of interest and determine how many of the top or bottom counties in the state they want to observe the average enrollment for.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="co"># specify state, top/bottom, and number of results displayed in the function</span></span>
-<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>plot.county <span class="ot">&lt;-</span> <span class="cf">function</span>(df, <span class="at">state_var =</span> <span class="st">"NC"</span>, <span class="at">group =</span> <span class="st">"top"</span>, <span class="at">row_display =</span> <span class="dv">5</span>) {</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>plot.county <span class="ot">&lt;-</span> <span class="cf">function</span>(df, <span class="at">var_name =</span> <span class="st">"enrollment"</span>, <span class="at">state_val =</span> <span class="st">"NC"</span>, <span class="at">group =</span> <span class="st">"top"</span>, <span class="at">row_display =</span> <span class="dv">5</span>) {</span>
 <span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a><span class="co"># generate plot variable</span></span>
-<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>  county_variable_subset <span class="ot">&lt;-</span>  census_data[[<span class="dv">1</span>]] <span class="sc">|&gt;</span></span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a><span class="co"># extract the county df from the census_data object</span></span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>  county_variable_subset <span class="ot">&lt;-</span>  df<span class="sc">$</span>county_data <span class="sc">|&gt;</span></span>
 <span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a><span class="co"># filter the data to show only the state specified</span></span>
-<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(state <span class="sc">==</span> <span class="st">"NC"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a><span class="co"># filter the data to show only the state specified in the function string</span></span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(state <span class="sc">==</span> state_val) <span class="sc">|&gt;</span></span>
 <span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a>    </span>
 <span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a><span class="co"># find the overall mean of the statistic for each area name</span></span>
 <span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a>    <span class="fu">group_by</span>(area_name) <span class="sc">|&gt;</span> </span>
-<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a>    <span class="fu">summarize</span>(area_name, <span class="st">"mean_enrollment"</span> <span class="ot">=</span> <span class="fu">mean</span>(enrollment)) <span class="sc">|&gt;</span></span>
-<span id="cb24-13"><a href="#cb24-13" aria-hidden="true" tabindex="-1"></a>    <span class="fu">distinct</span>(area_name, mean_enrollment) <span class="sc">|&gt;</span></span>
-<span id="cb24-14"><a href="#cb24-14" aria-hidden="true" tabindex="-1"></a>    <span class="fu">arrange</span>(<span class="fu">desc</span>(mean_enrollment))</span>
-<span id="cb24-15"><a href="#cb24-15" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb24-16"><a href="#cb24-16" aria-hidden="true" tabindex="-1"></a><span class="co"># sort the values depending on the selection of top or bottom</span></span>
-<span id="cb24-17"><a href="#cb24-17" aria-hidden="true" tabindex="-1"></a>    <span class="co">#ifelse(get(group) == "top", </span></span>
-<span id="cb24-18"><a href="#cb24-18" aria-hidden="true" tabindex="-1"></a>    <span class="co">#       arrange(desc(mean_enrollment)), </span></span>
-<span id="cb24-19"><a href="#cb24-19" aria-hidden="true" tabindex="-1"></a>    <span class="co">#       arrange(mean_enrollment))</span></span>
-<span id="cb24-20"><a href="#cb24-20" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb24-21"><a href="#cb24-21" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-22"><a href="#cb24-22" aria-hidden="true" tabindex="-1"></a><span class="co"># obtain the top or bottom x number of area_names where the number is given by the user or default and filter the data to only include the top or bottom area names for graphing</span></span>
-<span id="cb24-23"><a href="#cb24-23" aria-hidden="true" tabindex="-1"></a>    Display_num_subset <span class="ot">&lt;-</span> <span class="fu">head</span>(county_variable_subset, <span class="dv">5</span>)</span>
-<span id="cb24-24"><a href="#cb24-24" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-25"><a href="#cb24-25" aria-hidden="true" tabindex="-1"></a>  g_county <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(Display_num_subset, <span class="fu">aes</span>(area_name, mean_enrollment )) </span>
-<span id="cb24-26"><a href="#cb24-26" aria-hidden="true" tabindex="-1"></a>  g_county <span class="sc">+</span> <span class="fu">geom_point</span>() <span class="sc">+</span></span>
-<span id="cb24-27"><a href="#cb24-27" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Area Name"</span>, <span class="at">y =</span> <span class="st">"TBD"</span>) <span class="sc">+</span></span>
-<span id="cb24-28"><a href="#cb24-28" aria-hidden="true" tabindex="-1"></a>    <span class="fu">theme</span>(<span class="at">axis.text.x =</span> <span class="fu">element_text</span>(<span class="at">angle =</span> <span class="dv">90</span>,</span>
-<span id="cb24-29"><a href="#cb24-29" aria-hidden="true" tabindex="-1"></a>                                     <span class="at">vjust =</span> <span class="fl">0.5</span>,</span>
-<span id="cb24-30"><a href="#cb24-30" aria-hidden="true" tabindex="-1"></a>                                     <span class="at">hjust =</span> <span class="dv">1</span>))</span>
-<span id="cb24-31"><a href="#cb24-31" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-32"><a href="#cb24-32" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb24-33"><a href="#cb24-33" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-34"><a href="#cb24-34" aria-hidden="true" tabindex="-1"></a><span class="fu">plot.county</span>(census_data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: Returning more (or less) than 1 row per `summarise()` group was deprecated in
-dplyr 1.1.0.
-ℹ Please use `reframe()` instead.
-ℹ When switching from `summarise()` to `reframe()`, remember that `reframe()`
-  always returns an ungrouped data frame and adjust accordingly.</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>`summarise()` has grouped output by 'area_name'. You can override using the
-`.groups` argument.</code></pre>
-</div>
+<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a>    <span class="fu">summarize</span>(<span class="st">"mean_value"</span> <span class="ot">=</span> <span class="fu">mean</span>(<span class="fu">get</span>(var_name))) </span>
+<span id="cb24-13"><a href="#cb24-13" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb24-14"><a href="#cb24-14" aria-hidden="true" tabindex="-1"></a><span class="co"># Sort the data to display the enrollment means from largest to smallest when "top" is chosen, or from smallets to largest when "bottom" is chosen. </span></span>
+<span id="cb24-15"><a href="#cb24-15" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(group <span class="sc">==</span> <span class="st">"top"</span>) {</span>
+<span id="cb24-16"><a href="#cb24-16" aria-hidden="true" tabindex="-1"></a>  sorted_data <span class="ot">&lt;-</span> county_variable_subset <span class="sc">|&gt;</span> <span class="fu">arrange</span>(<span class="fu">desc</span>(mean_value))</span>
+<span id="cb24-17"><a href="#cb24-17" aria-hidden="true" tabindex="-1"></a>} <span class="cf">else</span> <span class="cf">if</span>(group <span class="sc">==</span> <span class="st">"bottom"</span>) {</span>
+<span id="cb24-18"><a href="#cb24-18" aria-hidden="true" tabindex="-1"></a>  sorted_data <span class="ot">&lt;-</span> county_variable_subset <span class="sc">|&gt;</span> <span class="fu">arrange</span>(mean_value)</span>
+<span id="cb24-19"><a href="#cb24-19" aria-hidden="true" tabindex="-1"></a>} <span class="cf">else</span> {</span>
+<span id="cb24-20"><a href="#cb24-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stop</span>(<span class="st">"group must be in one of c('top', 'bottom')"</span>)</span>
+<span id="cb24-21"><a href="#cb24-21" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb24-22"><a href="#cb24-22" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb24-23"><a href="#cb24-23" aria-hidden="true" tabindex="-1"></a><span class="co"># obtain the top or bottom x number of area_names where the number is given by the user or default and filter the data to only include the top or bottom area names for graphing</span></span>
+<span id="cb24-24"><a href="#cb24-24" aria-hidden="true" tabindex="-1"></a>  Display_num_subset <span class="ot">&lt;-</span> <span class="fu">head</span>(sorted_data, row_display)</span>
+<span id="cb24-25"><a href="#cb24-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-26"><a href="#cb24-26" aria-hidden="true" tabindex="-1"></a>  <span class="co"># sorting plot order depending on ascending or descending</span></span>
+<span id="cb24-27"><a href="#cb24-27" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Sorting data </span></span>
+<span id="cb24-28"><a href="#cb24-28" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(group <span class="sc">==</span> <span class="st">"top"</span>) {</span>
+<span id="cb24-29"><a href="#cb24-29" aria-hidden="true" tabindex="-1"></a>  g_county <span class="ot">&lt;-</span> Display_num_subset <span class="sc">|&gt;</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> forcats<span class="sc">::</span><span class="fu">fct_reorder</span>(area_name, mean_value), <span class="at">x =</span> mean_value))</span>
+<span id="cb24-30"><a href="#cb24-30" aria-hidden="true" tabindex="-1"></a>} <span class="cf">else</span> <span class="cf">if</span>(group <span class="sc">==</span> <span class="st">"bottom"</span>) {</span>
+<span id="cb24-31"><a href="#cb24-31" aria-hidden="true" tabindex="-1"></a>  g_county <span class="ot">&lt;-</span> Display_num_subset <span class="sc">|&gt;</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> forcats<span class="sc">::</span><span class="fu">fct_reorder</span>(area_name, <span class="fu">desc</span>(mean_value)), <span class="at">x =</span> mean_value))</span>
+<span id="cb24-32"><a href="#cb24-32" aria-hidden="true" tabindex="-1"></a>} <span class="cf">else</span> {</span>
+<span id="cb24-33"><a href="#cb24-33" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stop</span>(<span class="st">"group must be in one of c('top', 'bottom')"</span>)</span>
+<span id="cb24-34"><a href="#cb24-34" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb24-35"><a href="#cb24-35" aria-hidden="true" tabindex="-1"></a>  g_county <span class="sc">+</span> </span>
+<span id="cb24-36"><a href="#cb24-36" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_col</span>() <span class="sc">+</span></span>
+<span id="cb24-37"><a href="#cb24-37" aria-hidden="true" tabindex="-1"></a>    <span class="fu">xlab</span>(<span class="fu">paste</span>(<span class="st">"Average"</span>, var_name)) <span class="sc">+</span></span>
+<span id="cb24-38"><a href="#cb24-38" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ylab</span>(<span class="st">"County"</span>) <span class="sc">+</span></span>
+<span id="cb24-39"><a href="#cb24-39" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">title =</span> <span class="fu">paste</span>(<span class="st">"Average"</span>, var_name, <span class="st">"by county in"</span>, state_val), <span class="at">subtitle =</span> <span class="fu">str_to_sentence</span>(<span class="fu">paste</span>(group, row_display, <span class="st">"counties"</span>)))</span>
+<span id="cb24-40"><a href="#cb24-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-41"><a href="#cb24-41" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb24-42"><a href="#cb24-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-43"><a href="#cb24-43" aria-hidden="true" tabindex="-1"></a><span class="co"># Calling on a dataframe of class "county" with a default values that produce the top 5 enrollment counties in NC. </span></span>
+<span id="cb24-44"><a href="#cb24-44" aria-hidden="true" tabindex="-1"></a><span class="fu">plot.county</span>(census_data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -569,48 +571,296 @@ dplyr 1.1.0.
 </div>
 </div>
 </div>
-<p>Testing above code</p>
+<p>We can now take the above methods <code>plot.state</code> and <code>plot.county</code> to create time series plots for our numeric values of interest, and plots of the average value of interest by county.</p>
+</section>
+<section id="putting-it-together" class="level1">
+<h1>Putting it together</h1>
+<section id="data-processing" class="level2">
+<h2 class="anchored" data-anchor-id="data-processing">Data processing</h2>
+<p>Run the data processing function on the two enrollment URLs, specifying an appropriate name for the enrollment data column.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="co"># specify data frame, state, top/bottom, and number of results displayed in the function</span></span>
-<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>plot.county <span class="ot">&lt;-</span> <span class="cf">function</span>(df, <span class="at">state_var =</span> <span class="st">"NC"</span>, <span class="at">group_var =</span> <span class="st">"top"</span>, <span class="at">row_display =</span> <span class="dv">5</span>) {</span>
-<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a><span class="co"># generate plot variable</span></span>
-<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a>  county_subset <span class="ot">&lt;-</span> df[[<span class="dv">1</span>]] <span class="sc">|&gt;</span>  </span>
-<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb27-8"><a href="#cb27-8" aria-hidden="true" tabindex="-1"></a><span class="co"># filter the data to show only the state specified</span></span>
-<span id="cb27-9"><a href="#cb27-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(state <span class="sc">==</span> <span class="fu">get</span>(state_var)) <span class="sc">|&gt;</span>  </span>
-<span id="cb27-10"><a href="#cb27-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb27-11"><a href="#cb27-11" aria-hidden="true" tabindex="-1"></a><span class="co"># find the overall mean of the statistic for each area name</span></span>
-<span id="cb27-12"><a href="#cb27-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(area_name) <span class="sc">|&gt;</span> </span>
-<span id="cb27-13"><a href="#cb27-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(area_name, <span class="st">"mean_enrollment"</span> <span class="ot">=</span> <span class="fu">mean</span>(enrollment)) <span class="sc">|&gt;</span></span>
-<span id="cb27-14"><a href="#cb27-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">distinct</span>(area_name, mean_enrollment) <span class="sc">|&gt;</span></span>
-<span id="cb27-15"><a href="#cb27-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb27-16"><a href="#cb27-16" aria-hidden="true" tabindex="-1"></a><span class="co"># sort the values depending on the selection of 'top' or 'bottom'</span></span>
-<span id="cb27-17"><a href="#cb27-17" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">ifelse</span>(<span class="fu">get</span>(group) <span class="sc">==</span> <span class="st">"top"</span>, </span>
-<span id="cb27-18"><a href="#cb27-18" aria-hidden="true" tabindex="-1"></a>       <span class="fu">arrange</span>(<span class="fu">desc</span>(mean_enrollment)),</span>
-<span id="cb27-19"><a href="#cb27-19" aria-hidden="true" tabindex="-1"></a>       <span class="fu">arrange</span>(mean_enrollment) </span>
-<span id="cb27-20"><a href="#cb27-20" aria-hidden="true" tabindex="-1"></a>      )</span>
-<span id="cb27-21"><a href="#cb27-21" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb27-22"><a href="#cb27-22" aria-hidden="true" tabindex="-1"></a><span class="co"># obtain the top or bottom x number of area_names where the number is given by the user or default and filter the data to only include the top or bottom area names for graphing</span></span>
-<span id="cb27-23"><a href="#cb27-23" aria-hidden="true" tabindex="-1"></a>  plot_num_subset <span class="ot">&lt;-</span> <span class="fu">head</span>(county_subset, <span class="fu">get</span>(row_display))</span>
-<span id="cb27-24"><a href="#cb27-24" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb27-25"><a href="#cb27-25" aria-hidden="true" tabindex="-1"></a>  g_county <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(plot_num_subset, <span class="fu">aes</span>(area_name, mean_enrollment )) </span>
-<span id="cb27-26"><a href="#cb27-26" aria-hidden="true" tabindex="-1"></a>  g_county <span class="sc">+</span> <span class="fu">geom_point</span>() <span class="sc">+</span> </span>
-<span id="cb27-27"><a href="#cb27-27" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Area Name"</span>, <span class="at">y =</span> <span class="st">"TBD"</span>) <span class="sc">+</span> </span>
-<span id="cb27-28"><a href="#cb27-28" aria-hidden="true" tabindex="-1"></a>    <span class="fu">theme</span>(<span class="at">axis.text.x =</span> <span class="fu">element_text</span>(<span class="at">angle =</span> <span class="dv">90</span>, <span class="at">vjust =</span> <span class="fl">0.5</span>, <span class="at">hjust =</span> <span class="dv">1</span>))</span>
-<span id="cb27-29"><a href="#cb27-29" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb27-30"><a href="#cb27-30" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb27-31"><a href="#cb27-31" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb27-32"><a href="#cb27-32" aria-hidden="true" tabindex="-1"></a><span class="co">#plot.county(census_data) </span></span>
-<span id="cb27-33"><a href="#cb27-33" aria-hidden="true" tabindex="-1"></a><span class="co">#commented out to allow for render, need to troubleshoot errors</span></span>
-<span id="cb27-34"><a href="#cb27-34" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb27-35"><a href="#cb27-35" aria-hidden="true" tabindex="-1"></a><span class="co"># Error comment below:</span></span>
-<span id="cb27-36"><a href="#cb27-36" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb27-37"><a href="#cb27-37" aria-hidden="true" tabindex="-1"></a><span class="co">#Error in ifelse(distinct(summarize(group_by(filter(df[[1]], state == get(state_var)), : unused argument (arrange(mean_enrollment))</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Reading in and prepping the two EDU01 census .csv files given</span></span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>census_edu01a <span class="ot">&lt;-</span> <span class="fu">prepare_census_data</span>(<span class="st">"https://www4.stat.ncsu.edu/~online/datasets/EDU01a.csv"</span>, <span class="st">"enrollment"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Rows: 3198 Columns: 42
+── Column specification ────────────────────────────────────────────────────────
+Delimiter: ","
+chr (22): Area_name, STCOU, EDU010187N1, EDU010187N2, EDU010188N1, EDU010188...
+dbl (20): EDU010187F, EDU010187D, EDU010188F, EDU010188D, EDU010189F, EDU010...
+
+ℹ Use `spec()` to retrieve the full column specification for this data.
+ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>census_edu01b <span class="ot">&lt;-</span> <span class="fu">prepare_census_data</span>(<span class="st">"https://www4.stat.ncsu.edu/~online/datasets/EDU01b.csv"</span>, <span class="st">"enrollment"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Rows: 3198 Columns: 42
+── Column specification ────────────────────────────────────────────────────────
+Delimiter: ","
+chr (22): Area_name, STCOU, EDU010197N1, EDU010197N2, EDU010198N1, EDU010198...
+dbl (20): EDU010197F, EDU010197D, EDU010198F, EDU010198D, EDU010199F, EDU010...
+
+ℹ Use `spec()` to retrieve the full column specification for this data.
+ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+</div>
+</div>
+</section>
+<section id="data-combining" class="level2">
+<h2 class="anchored" data-anchor-id="data-combining">Data combining</h2>
+<p>Run the data combining function to put the two data frames into one object with two data frames.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>census_data <span class="ot">&lt;-</span> <span class="fu">combine_data</span>(census_edu01a, census_edu01b)</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>census_data</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$county_data
+# A tibble: 62,900 × 7
+   area_name   STCOU name       enrollment measurement  year state
+   &lt;chr&gt;       &lt;chr&gt; &lt;chr&gt;           &lt;dbl&gt; &lt;chr&gt;       &lt;int&gt; &lt;chr&gt;
+ 1 Autauga, AL 01001 EDU010187D       6829 EDU0101      1987 AL   
+ 2 Autauga, AL 01001 EDU010188D       6900 EDU0101      1988 AL   
+ 3 Autauga, AL 01001 EDU010189D       6920 EDU0101      1989 AL   
+ 4 Autauga, AL 01001 EDU010190D       6847 EDU0101      1990 AL   
+ 5 Autauga, AL 01001 EDU010191D       7008 EDU0101      1991 AL   
+ 6 Autauga, AL 01001 EDU010192D       7137 EDU0101      1992 AL   
+ 7 Autauga, AL 01001 EDU010193D       7152 EDU0101      1993 AL   
+ 8 Autauga, AL 01001 EDU010194D       7381 EDU0101      1994 AL   
+ 9 Autauga, AL 01001 EDU010195D       7568 EDU0101      1995 AL   
+10 Autauga, AL 01001 EDU010196D       7834 EDU0101      1996 AL   
+# ℹ 62,890 more rows
+
+$state_data
+# A tibble: 1,060 × 7
+   area_name     STCOU name       enrollment measurement  year division
+   &lt;chr&gt;         &lt;chr&gt; &lt;chr&gt;           &lt;dbl&gt; &lt;chr&gt;       &lt;int&gt; &lt;chr&gt;   
+ 1 UNITED STATES 00000 EDU010187D   40024299 EDU0101      1987 ERROR   
+ 2 UNITED STATES 00000 EDU010188D   39967624 EDU0101      1988 ERROR   
+ 3 UNITED STATES 00000 EDU010189D   40317775 EDU0101      1989 ERROR   
+ 4 UNITED STATES 00000 EDU010190D   40737600 EDU0101      1990 ERROR   
+ 5 UNITED STATES 00000 EDU010191D   41385442 EDU0101      1991 ERROR   
+ 6 UNITED STATES 00000 EDU010192D   42088151 EDU0101      1992 ERROR   
+ 7 UNITED STATES 00000 EDU010193D   42724710 EDU0101      1993 ERROR   
+ 8 UNITED STATES 00000 EDU010194D   43369917 EDU0101      1994 ERROR   
+ 9 UNITED STATES 00000 EDU010195D   43993459 EDU0101      1995 ERROR   
+10 UNITED STATES 00000 EDU010196D   44715737 EDU0101      1996 ERROR   
+# ℹ 1,050 more rows</code></pre>
+</div>
+</div>
+<section id="state-plot" class="level3">
+<h3 class="anchored" data-anchor-id="state-plot">State Plot</h3>
+<p>Use the plot function on the ‘state’ data frame.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot.state</span>(census_data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>`summarise()` has grouped output by 'division'. You can override using the
+`.groups` argument.</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="st558_project1_group_r_files/figure-html/unnamed-chunk-3-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="county-plots" class="level3">
+<h3 class="anchored" data-anchor-id="county-plots">County plots</h3>
+<p>Use the plot function on the ‘county’ data frame to produce the following plots.</p>
+<section id="specify-state-to-be-nc-group-to-be-the-top-and-the-number-to-be-looked-at-being-20." class="level4">
+<h4 class="anchored" data-anchor-id="specify-state-to-be-nc-group-to-be-the-top-and-the-number-to-be-looked-at-being-20.">1. Specify state to be “NC”, group to be the “top”, and the number to be looked at being “20”.</h4>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot.county</span>(census_data, <span class="at">state_val =</span> <span class="st">"NC"</span>, <span class="at">var_name =</span> <span class="st">"enrollment"</span>, <span class="at">group =</span> <span class="st">"top"</span>, <span class="at">row_display =</span> <span class="dv">20</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="st558_project1_group_r_files/figure-html/unnamed-chunk-4-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="specify-state-to-be-sc-group-to-be-the-bottom-and-the-number-to-be-looked-at-being-7." class="level4">
+<h4 class="anchored" data-anchor-id="specify-state-to-be-sc-group-to-be-the-bottom-and-the-number-to-be-looked-at-being-7.">2. Specify state to be “SC”, group to be the “bottom”, and the number to be looked at being “7”.</h4>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot.county</span>(census_data, <span class="at">state_val =</span> <span class="st">"SC"</span>, <span class="at">var_name =</span> <span class="st">"enrollment"</span>, <span class="at">group =</span> <span class="st">"bottom"</span>, <span class="at">row_display =</span> <span class="dv">7</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="st558_project1_group_r_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="using-defaults" class="level4">
+<h4 class="anchored" data-anchor-id="using-defaults">3. Using defaults</h4>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot.county</span>(census_data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="st558_project1_group_r_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="specifiy-state-to-be-pa-group-to-be-the-top-and-the-number-to-be-looked-at-being-8." class="level4">
+<h4 class="anchored" data-anchor-id="specifiy-state-to-be-pa-group-to-be-the-top-and-the-number-to-be-looked-at-being-8.">4. Specifiy state to be “PA”, group to be the “top”, and the number to be looked at being “8”.</h4>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot.county</span>(census_data, <span class="at">state_val =</span> <span class="st">"PA"</span>, <span class="at">var_name =</span> <span class="st">"enrollment"</span>, <span class="at">group =</span> <span class="st">"top"</span>, <span class="at">row_display =</span> <span class="dv">8</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="st558_project1_group_r_files/figure-html/unnamed-chunk-7-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+</section>
+</section>
+<section id="read-in-similar-data-sets-and-apply-the-developed-functions." class="level2">
+<h2 class="anchored" data-anchor-id="read-in-similar-data-sets-and-apply-the-developed-functions.">Read in similar data sets and apply the developed functions.</h2>
+<section id="data-processing." class="level3">
+<h3 class="anchored" data-anchor-id="data-processing.">Data processing.</h3>
+<p>Runing the data processing function on the below URLs provided us with data frames <code>PST01a</code> through <code>PST01d</code> that we will combine into one object with separate data frames for state data and county data. – https://www4.stat.ncsu.edu/~online/datasets/PST01a.csv – https://www4.stat.ncsu.edu/~online/datasets/PST01b.csv – https://www4.stat.ncsu.edu/~online/datasets/PST01c.csv – https://www4.stat.ncsu.edu/~online/datasets/PST01d.csv</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>PST01a <span class="ot">&lt;-</span> <span class="fu">prepare_census_data</span>(<span class="st">"https://www4.stat.ncsu.edu/~online/datasets/PST01a.csv"</span>, <span class="st">"population"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Rows: 3198 Columns: 42
+── Column specification ────────────────────────────────────────────────────────
+Delimiter: ","
+chr (22): Area_name, STCOU, PST015171N1, PST015171N2, PST015172N1, PST015172...
+dbl (20): PST015171F, PST015171D, PST015172F, PST015172D, PST015173F, PST015...
+
+ℹ Use `spec()` to retrieve the full column specification for this data.
+ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>PST01b <span class="ot">&lt;-</span> <span class="fu">prepare_census_data</span>(<span class="st">"https://www4.stat.ncsu.edu/~online/datasets/PST01b.csv"</span>, <span class="st">"population"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Rows: 3198 Columns: 42
+── Column specification ────────────────────────────────────────────────────────
+Delimiter: ","
+chr (22): Area_name, STCOU, PST025182N1, PST025182N2, PST025183N1, PST025183...
+dbl (20): PST025182F, PST025182D, PST025183F, PST025183D, PST025184F, PST025...
+
+ℹ Use `spec()` to retrieve the full column specification for this data.
+ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>PST01c <span class="ot">&lt;-</span> <span class="fu">prepare_census_data</span>(<span class="st">"https://www4.stat.ncsu.edu/~online/datasets/PST01c.csv"</span>, <span class="st">"population"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Rows: 3198 Columns: 42
+── Column specification ────────────────────────────────────────────────────────
+Delimiter: ","
+chr (22): Area_name, STCOU, PST035191N1, PST035191N2, PST035192N1, PST035192...
+dbl (20): PST035191F, PST035191D, PST035192F, PST035192D, PST035193F, PST035...
+
+ℹ Use `spec()` to retrieve the full column specification for this data.
+ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>PST01d <span class="ot">&lt;-</span> <span class="fu">prepare_census_data</span>(<span class="st">"https://www4.stat.ncsu.edu/~online/datasets/PST01d.csv"</span>, <span class="st">"population"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Rows: 3198 Columns: 42
+── Column specification ────────────────────────────────────────────────────────
+Delimiter: ","
+chr (22): Area_name, STCOU, PST045200N1, PST045200N2, PST045201N1, PST045201...
+dbl (20): PST045200F, PST045200D, PST045201F, PST045201D, PST045202F, PST045...
+
+ℹ Use `spec()` to retrieve the full column specification for this data.
+ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="data-combining." class="level2">
+<h2 class="anchored" data-anchor-id="data-combining.">Data combining.</h2>
+<p>Running our data combining function three times created the object <code>PST01_combined</code> that will be used to generate our state and county plot graphics for analysis.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a>PST01ab <span class="ot">&lt;-</span> <span class="fu">combine_data</span>(PST01a, PST01b)</span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a>PST01cd <span class="ot">&lt;-</span> <span class="fu">combine_data</span>(PST01c, PST01d)</span>
+<span id="cb45-4"><a href="#cb45-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb45-5"><a href="#cb45-5" aria-hidden="true" tabindex="-1"></a>PST01_combined <span class="ot">&lt;-</span> <span class="fu">combine_data</span>(PST01ab, PST01cd)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="state-data-frame-plot" class="level2">
+<h2 class="anchored" data-anchor-id="state-data-frame-plot">State data frame plot</h2>
+<p>Use the function <code>plot.state</code> to generate the plot of <code>PST01_combined</code>’s state data frame.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot.state</span>(PST01_combined, <span class="st">"population"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>`summarise()` has grouped output by 'division'. You can override using the
+`.groups` argument.</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="st558_project1_group_r_files/figure-html/unnamed-chunk-10-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="county-data-frame-plots" class="level2">
+<h2 class="anchored" data-anchor-id="county-data-frame-plots">County data frame plots</h2>
+<p>Use the function <code>plot.county</code> to generate the plot of <code>PST01_combined</code>’s county data frame using the below specified criteria.</p>
+<section id="specify-the-state-to-be-ca-the-group-to-be-the-top-and-the-number-looked-at-being-15." class="level3">
+<h3 class="anchored" data-anchor-id="specify-the-state-to-be-ca-the-group-to-be-the-top-and-the-number-looked-at-being-15.">1. Specify the state to be “CA”, the group to be the “top”, and the number looked at being “15”.</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot.county</span>(PST01_combined, <span class="at">state_val =</span> <span class="st">"CA"</span>, <span class="at">var_name =</span> <span class="st">"population"</span>, <span class="at">group =</span> <span class="st">"top"</span>, <span class="at">row_display =</span> <span class="dv">15</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="st558_project1_group_r_files/figure-html/unnamed-chunk-11-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="specify-the-state-to-be-tx-the-group-to-be-the-top-and-the-number-looked-at-being-4." class="level3">
+<h3 class="anchored" data-anchor-id="specify-the-state-to-be-tx-the-group-to-be-the-top-and-the-number-looked-at-being-4.">2. Specify the state to be “TX”, the group to be the “top”, and the number looked at being “4”.</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb49"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot.county</span>(PST01_combined, <span class="at">state_val =</span> <span class="st">"TX"</span>, <span class="at">var_name =</span> <span class="st">"population"</span>, <span class="at">group =</span> <span class="st">"top"</span>, <span class="at">row_display =</span> <span class="dv">4</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="st558_project1_group_r_files/figure-html/unnamed-chunk-12-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="using-defaults-only." class="level3">
+<h3 class="anchored" data-anchor-id="using-defaults-only.">3. Using defaults only.</h3>
+<p>Using the default value of “enrollment” for the variable “population” renders an error message.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb50"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><span class="co"># plot.county(PST01_combined)</span></span>
+<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb50-3"><a href="#cb50-3" aria-hidden="true" tabindex="-1"></a><span class="co"># commenting out the plot to allow the rest of the program to work, permitting rendering, committing, and pushing to GitHub.</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<blockquote class="blockquote">
+<p>Error in <code>summarize()</code>: ℹ In argument: <code>mean_value = mean(get(var_name))</code>. ℹ In group 1: <code>area_name = "Alamance, NC"</code>. Caused by error in <code>get()</code>: ! object ‘enrollment’ not found Backtrace: 1. global plot.county(PST01_combined) 12. base::get(var_name) Error in summarize(group_by(filter(df$county_data, state == state_val), :</p>
+<p>ℹ In group 1: <code>area_name = "Alamance, NC"</code>. Caused by error in <code>get()</code>: ! object ‘enrollment’ not found</p>
+</blockquote>
+</section>
+<section id="specifying-the-state-to-be-ny-the-group-being-the-top-and-the-number-looked-at-being-10." class="level3">
+<h3 class="anchored" data-anchor-id="specifying-the-state-to-be-ny-the-group-being-the-top-and-the-number-looked-at-being-10.">4. Specifying the state to be “NY”, the group being the “top”, and the number looked at being “10”.</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb51"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot.county</span>(PST01_combined, <span class="at">state_val =</span> <span class="st">"NY"</span>, <span class="at">var_name =</span> <span class="st">"population"</span>, <span class="at">group =</span> <span class="st">"top"</span>, <span class="at">row_display =</span> <span class="dv">10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="st558_project1_group_r_files/figure-html/unnamed-chunk-14-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
 </div>
 
 
+</section>
+</section>
 </section>
 
 </main> <!-- /main -->
