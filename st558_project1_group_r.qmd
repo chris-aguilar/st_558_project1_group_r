@@ -483,7 +483,7 @@ PST01_combined <- combine_data(PST01ab, PST01cd)
 
 Now that we have our data object, will use the function `plot.state` to generate the plot of `PST01_combined`'s state data frame in order to compare the mean populations of the different divisions.
 
-```{r Plot division by year and avg population}
+```{r Plot division by year and avg population2}
 plot.state(PST01_combined, "population")
 ```
 
@@ -507,7 +507,7 @@ plot.county(PST01_combined, state_val = "TX", var_name = "population", group = "
 
 Using the default value of "enrollment" for the variable "population" renders an error message. The funciton has been commented out to allow the rest of the program to work and permitting rendering, committing, and pushing the program to GitHub.
 
-```{r Default plot for NC top 5 enrollment}
+```{r Default plot for NC top 5 enrollment2}
 # plot.county(PST01_combined)
 ```
 
