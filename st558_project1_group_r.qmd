@@ -324,97 +324,65 @@ state_variable_plot <- df |>
 plot.state(census_data$state_data, "enrollment")
 
 ```
+The above code works.
 
 # Class: County
 
 ```{r county class plot}
 
 # specify state, top/bottom, and number of results displayed in the function
-plot.county <- function(df, state_var = "NC", group = "top", row_display = 5) {
+plot.county <- function(df, var_name = "value", state_val = "NC", group = "top", row_display = 5) {
 
 # generate plot variable
-  county_variable_subset <-  census_data[[1]] |>
+  county_variable_subset <-  df |>
 
 # filter the data to show only the state specified
-    filter(state == "NC") |>
+    filter(state == state_val) |>
     
 # find the overall mean of the statistic for each area name
     group_by(area_name) |> 
-    summarize(area_name, "mean_enrollment" = mean(enrollment)) |>
-    distinct(area_name, mean_enrollment) |>
-    arrange(desc(mean_enrollment))
+    summarize("mean_value" = mean(get(var_name))) 
   
-# sort the values depending on the selection of top or bottom
-    #ifelse(get(group) == "top", 
-    #       arrange(desc(mean_enrollment)), 
-    #       arrange(mean_enrollment))
+# Sorting data 
+if(group == "top") {
+  sorted_data <- county_variable_subset |> arrange(desc(mean_value))
+} else if(group == "bottom") {
+  sorted_data <- county_variable_subset |> arrange(mean_value)
+} else {
+  stop("group must be in one of c('top', 'bottom')")
+}
   
-
 # obtain the top or bottom x number of area_names where the number is given by the user or default and filter the data to only include the top or bottom area names for graphing
-    Display_num_subset <- head(county_variable_subset, 5)
+  Display_num_subset <- head(sorted_data, row_display)
 
-  g_county <- ggplot(Display_num_subset, aes(area_name, mean_enrollment )) 
-  g_county + geom_point() +
-    labs(x = "Area Name", y = "TBD") +
-    theme(axis.text.x = element_text(angle = 90,
-                                     vjust = 0.5,
-                                     hjust = 1))
+  # sorting plot order depending on ascending or descending
+  # Sorting data 
+if(group == "top") {
+  g_county <- Display_num_subset |> ggplot(aes(y = forcats::fct_reorder(area_name, mean_value), x = mean_value))
+} else if(group == "bottom") {
+  g_county <- Display_num_subset |> ggplot(aes(y = forcats::fct_reorder(area_name, desc(mean_value)), x = mean_value))
+} else {
+  stop("group must be in one of c('top', 'bottom')")
+}
+  g_county + 
+    geom_col() +
+    xlab(paste("Average", var_name)) +
+    ylab("County") +
+    labs(title = paste("Average", var_name, "by county"), subtitle = str_to_sentence(paste(group, row_display, "counties")))
 
 }
 
-plot.county(census_data)
+plot.county(census_data$county_data, state_val = "VA", var_name = "enrollment", group = "top", row_display = 10)
 
 ```
 
-Testing above code 
-```{r}
-# specify data frame, state, top/bottom, and number of results displayed in the function
+The above code works.
 
-plot.county <- function(df, state_var = "NC", group_var = "top", row_display = 5) {
+## Putting it together
 
-# generate plot variable
-  county_subset <- df[[1]] |>  
+We can now take the above methods `plot.state` and `plot.county` to create time series plots for our numeric values of interest, and plots of the average value of interest by county.
 
-# filter the data to show only the state specified
-  filter(state == get(state_var)) |>  
+ASSIGNMENT SPECIFICATIONS GO BELOW.
 
-# find the overall mean of the statistic for each area name
-  group_by(area_name) |> 
-  summarize(area_name, "mean_enrollment" = mean(enrollment)) |>
-  distinct(area_name, mean_enrollment) |>
-
-# sort the values depending on the selection of 'top' or 'bottom'
-  dplyr::ifelse(get(group) == "top", 
-       arrange(desc(mean_enrollment)),
-       arrange(mean_enrollment) 
-      )
-
-# obtain the top or bottom x number of area_names where the number is given by the user or default and filter the data to only include the top or bottom area names for graphing
-  plot_num_subset <- head(county_subset, get(row_display))
-
-  g_county <- ggplot(plot_num_subset, aes(area_name, mean_enrollment )) 
-  g_county + geom_point() + 
-    labs(x = "Area Name", y = "TBD") + 
-    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
-
-}
-
-#plot.county(census_data) 
-#commented out to allow for render, need to troubleshoot errors
-
-# Error comment below:
-
-#Error in ifelse(distinct(summarize(group_by(filter(df[[1]], state == get(state_var)), : unused argument (arrange(mean_enrollment))
-
-```
-
-
-
-
-
-
-
-
-
-
+We separate each prompt and code with headers.
 
