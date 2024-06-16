@@ -290,36 +290,38 @@ We are now ready to analyze this data.
 
 # Class: State
 
-For the State class plotting method we've developed a function that plots the mean value of enrollment across the years for each Division. The twenty "Error" values for Division have been removed in generating the subset prior to plotting the data.
+For the State class plotting method we've developed a function that plots the mean value of the variable of interest, in this case `enrollment`, across the years for each Division. The twenty "Error" values for Division have been removed in generating the subset prior to plotting the data.
 
 ```{r state class plot}
 
 # specify data frame, default variable name, 
-plot.state <- function(df, var_name = "enrollment"){
+plot.state <- function(df, var_name = "value"){
   
 # create subset data for plotting
-state_variable_plot <- df[[2]] |>
+state_variable_plot <- df |>
 
 # remove the error values
     filter(division != "ERROR") |>  
 
 # subset the data to the variables of interest
-    group_by(division, year, get(var_name)) |> 
+    group_by(division, year) |> 
   #create the mean statistic for plotting
-    summarize("mean_enrollment" = mean(get(var_name)))
+    summarize("mean_value" = mean(get(var_name)))
 
 # generate the plot of year vs mean
-  g_state <- ggplot(state_variable_plot, aes(year, mean_enrollment, color=division)) 
+  g_state <- ggplot(state_variable_plot, aes(year, mean_value, color=division)) 
 
 # plot the division values
-  g_state + geom_point() +
-  
-# assign labels to the x and y axis
-  labs(x = "year", y = "mean_enrollment")
+  g_state + 
+    geom_line() +
+    labs(title = paste("Average yearly", var_name, "by state division")) +
+    xlab("Year") +
+    ylab(paste("Average", var_name))
 
 }
 
-plot.state(census_data)
+# Calling on a dataframe of clas "state" with a variable-of-interest called "enrollment"
+plot.state(census_data$state_data, "enrollment")
 
 ```
 
