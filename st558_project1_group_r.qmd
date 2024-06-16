@@ -67,7 +67,7 @@ census_non_county_lvl <- census_non_county_lvl |>
          division = if_else(is.na(division), "ERROR", division))
 ```
 
-## Creating data preprocessing functions
+## Creating data pre-processing functions
 
 We'll create some functions to perform the following steps:
 
@@ -109,7 +109,7 @@ read_and_pivot <- function(url, default_var_name = "value") {
 
 From the default `name` column created by `pivot_longer` that captures the variable names ending in "D", we'll extract the survey type and year, which will be reflected by the `measurement` and `year` columns created, respectively.
 
-We have to be careful, however. The exploration isn't done here, but `EDU01a.csv` data captures the years 1987 - 1996, where the `EDU01b.csv` data captures the years 1997-2006. So we need to account for the millennium we're in.
+We have to be careful, however. The exploration isn't done here, but `EDU01a.csv` data captures the years 1987 - 1996, where the `EDU01b.csv` data captures the years 1997-2006. So we need to account for the millennium we're in. With this in mind we've accounted for the range of years 1930-2029 as a defensive programming measure.
 
 ```{r step 3}
 
@@ -120,9 +120,9 @@ extract_survey_and_year <- function(df) {
       measurement = substr(name, 1, 7),
       # year = paste0("19", substr(name, 8, 9)) |> as.integer())
       year = ifelse(
-        substr(name, 8, 8) %in% c("4", "5", "6", "7", "8", "9"), paste0("19", substr(name, 8, 9)) |> as.integer(),
+        substr(name, 8, 8) %in% c("3", "4", "5", "6", "7", "8", "9"), paste0("19", substr(name, 8, 9)) |> as.integer(),
         ifelse(
-          substr(name, 8, 8) %in% c("0", "1"), paste0("20", substr(name, 8, 9)) |> as.integer(),
+          substr(name, 8, 8) %in% c("0", "1", "2"), paste0("20", substr(name, 8, 9)) |> as.integer(),
           NA)
         )
   )
@@ -229,7 +229,7 @@ split_census_data <- function(census_data) {
 
 ### Combining steps 1-6 in a wrapper function
 
-We'll now create a wrapper function that combines the functions created above into one call. It'll take as input the data's url, and an optional argument for the `value` column name created by `pivot_longer`.
+We'll now create a wrapper function that combines the functions created above into one call. It'll take as input the data's url, and an optional argument for the `enrollment` column name created by `pivot_longer`.
 
 ```{r wrapper function}
 
@@ -288,11 +288,11 @@ census_data
 
 We are now ready to analyze this data.
 
-# Class: State
+# Class State plotting function
 
-For the State class plotting method we've developed a function that plots the mean value of the variable of interest, in this case `enrollment`, across the years for each Division. The twenty "Error" values for Division have been removed in generating the subset prior to plotting the data.
+For the State class plot we've developed a function that maps the mean value of the variable of interest, in this case `enrollment`, across the years for each Division. There are twenty "Error" values for Division that have been removed as part of generating the subset prior to plotting the data.
 
-```{r state class plot}
+```{r state class plot fn development}
 
 # specify data frame, default variable name, 
 plot.state <- function(df, var_name = "enrollment"){
@@ -325,11 +325,11 @@ plot.state(census_data)
 
 ```
 
-# Class: County
+# Class County plotting function
 
-Next we created a similar plotting function with more flexiblity. The plotting funciton allows the user to specify a state of interest and determine how many of the top or bottom counties in the state they want to observe the average enrollment for.
+Next we created a similar plotting function with more flexibility. The county plotting function allows the user to specify a state of interest and determine how many of the top or bottom counties in the state they want to observe the average enrollment for.
 
-```{r county class plot}
+```{r county class plot fn development}
 
 # specify state, top/bottom, and number of results displayed in the function
 plot.county <- function(df, var_name = "enrollment", state_val = "NC", group = "top", row_display = 5) {
@@ -378,15 +378,15 @@ plot.county(census_data)
 
 ```
 
-We can now take the above methods `plot.state` and `plot.county` to create time series plots for our numeric values of interest, and plots of the average value of interest by county.
+We can now utilize the above methods `plot.state` and `plot.county` to create time series plots for our numeric values of interest, and plots of the average value of interest by county.
 
 # Putting it together
 
 ## Data processing
 
-Run the data processing function on the two enrollment URLs, specifying an appropriate name for the enrollment data column.
+First, we will run the census raw data URLs through our `prepare_census_data` function to generate data frames for combining into our object for analysis.
 
-```{r}
+```{r Read in census data}
 
 # Reading in and prepping the two EDU01 census .csv files given
 
@@ -398,9 +398,9 @@ census_edu01b <- prepare_census_data("https://www4.stat.ncsu.edu/~online/dataset
 
 ## Data combining
 
-Run the data combining function to put the two data frames into one object with two data frames.
+Processing our data frames through the `combine_data` function provides us with the single object we need for analysis.
 
-```{r}
+```{r Combining census data}
 census_data <- combine_data(census_edu01a, census_edu01b)
 
 census_data
@@ -408,50 +408,55 @@ census_data
 
 ### State Plot
 
-Use the plot function on the 'state' data frame.
+Using the `plot.state` function on `census_data` generates the plot of the `state_data` frame. This plot provides useful information that can be used to generate research questions to determine what cause such a contrast between the top 4 divisions from the bottom 5.
 
-```{r}
+```{r Plot division by year and avg population}
 plot.state(census_data)
 ```
 
 ### County plots
 
-Use the plot function on the 'county' data frame to produce the following plots.
+Using the `plot.county` function on `county_data` to generate plots using the below specified criteria provides useful information that can be used to generate research questions.
 
-#### 1. Specify state to be "NC", group to be the "top", and the number to be looked at being "20".
+1.  Specify state to be "NC", group to be the "top", and the number to be looked at being "20".
 
-```{r}
+```{r NC enrollment top 20}
 plot.county(census_data, state_val = "NC", var_name = "enrollment", group = "top", row_display = 20)
 ```
 
-#### 2. Specify state to be "SC", group to be the "bottom", and the number to be looked at being "7".
+2.  Specify state to be "SC", group to be the "bottom", and the number to be looked at being "7".
 
-```{r}
+```{r SC enrollment bottom 7}
 plot.county(census_data, state_val = "SC", var_name = "enrollment", group = "bottom", row_display = 7)
 ```
 
-#### 3. Using defaults
+3.  Using defaults
 
-```{r}
+```{r Default plot for NC top 5 enrollment}
 plot.county(census_data)
 ```
 
-#### 4. Specifiy state to be "PA", group to be the "top", and the number to be looked at being "8".
+4.  Specifiy state to be "PA", group to be the "top", and the number to be looked at being "8".
 
-```{r}
+```{r PA enrollment top 8}
 plot.county(census_data, state_val = "PA", var_name = "enrollment", group = "top", row_display = 8)
 ```
 
-## Read in similar data sets and apply the developed functions. 
+## Read in similar data sets and apply the developed functions.
 
-### Data processing. 
+### Data processing
 
-Runing the data processing function on the below URLs provided us with data frames `PST01a` through `PST01d` that we will combine into one object with separate data frames for state data and county data. 
-– https://www4.stat.ncsu.edu/~online/datasets/PST01a.csv
-– https://www4.stat.ncsu.edu/~online/datasets/PST01b.csv
-– https://www4.stat.ncsu.edu/~online/datasets/PST01c.csv
-– https://www4.stat.ncsu.edu/~online/datasets/PST01d.csv
-```{r}
+Processing the below URLs through the data processing function provides us with data frames `PST01a` through `PST01d` that we will combine into one object with data frames `state_data` and `county_data`.
+
+-   https://www4.stat.ncsu.edu/\~online/datasets/PST01a.csv
+
+-   https://www4.stat.ncsu.edu/\~online/datasets/PST01b.csv
+
+-   https://www4.stat.ncsu.edu/\~online/datasets/PST01c.csv
+
+-   https://www4.stat.ncsu.edu/\~online/datasets/PST01d.csv
+
+```{r Create PST01 data frames}
 
 PST01a <- prepare_census_data("https://www4.stat.ncsu.edu/~online/datasets/PST01a.csv", "population")
 
@@ -462,11 +467,11 @@ PST01c <- prepare_census_data("https://www4.stat.ncsu.edu/~online/datasets/PST01
 PST01d <- prepare_census_data("https://www4.stat.ncsu.edu/~online/datasets/PST01d.csv", "population")
 ```
 
+## Data combining
 
-## Data combining. 
+Processing our newly generated data frames through our data will generate our `PST01_combined` data objet that will be used for subsetting before analysis. Because our function in only designed to combine two data frames at a time, we will combine `PST01a` with `PST01b`, `PST01c` with `PST01d`, then combining the resulting data frames `PST01ab` and `PST01cd` to create our desired object `PST01_combined`.
 
-Running our data combining function three times created the object `PST01_combined` that will be used to generate our state and county plot graphics for analysis.  
-```{r}
+```{r Combint PST01 data frames}
 PST01ab <- combine_data(PST01a, PST01b)
 
 PST01cd <- combine_data(PST01c, PST01d)
@@ -476,52 +481,42 @@ PST01_combined <- combine_data(PST01ab, PST01cd)
 
 ## State data frame plot
 
-Use the function `plot.state` to generate the plot of `PST01_combined`'s state data frame.
-```{r}
+Now that we have our data object, will use the function `plot.state` to generate the plot of `PST01_combined`'s state data frame in order to compare the mean populations of the different divisions.
+
+```{r Plot division by year and avg population}
 plot.state(PST01_combined, "population")
 ```
 
 ## County data frame plots
 
-Use the function `plot.county` to generate the plot of `PST01_combined`'s county data frame using the below specified criteria. 
+Next, we will use the `plot.county` function to generate the plot of `PST01_combined`'s county data frame using the below specified criteria.
 
-### 1. Specify the state to be "CA", the group to be the "top", and the number looked at being "15".
-```{r}
+1. Specify the state to be "CA", the group to be the "top", and the number looked at being "15".
+
+```{r Plot CA top 15 population}
 plot.county(PST01_combined, state_val = "CA", var_name = "population", group = "top", row_display = 15)
 ```
 
-### 2. Specify the state to be "TX", the group to be the "top", and the number looked at being "4".
-```{r}
+2. Specify the state to be "TX", the group to be the "top", and the number looked at being "4".
+
+```{r Plot TX top 4 population}
 plot.county(PST01_combined, state_val = "TX", var_name = "population", group = "top", row_display = 4)
 ```
 
-### 3. Using defaults only. 
-Using the default value of "enrollment" for the variable "population" renders an error message. 
+3. Using defaults only.
 
-```{r}
+Using the default value of "enrollment" for the variable "population" renders an error message. The funciton has been commented out to allow the rest of the program to work and permitting rendering, committing, and pushing the program to GitHub.
+
+```{r Default plot for NC top 5 enrollment}
 # plot.county(PST01_combined)
-
-# commenting out the plot to allow the rest of the program to work, permitting rendering, committing, and pushing to GitHub.
-
-
 ```
 
-> Error in `summarize()`:
-> ℹ In argument: `mean_value = mean(get(var_name))`.
-> ℹ In group 1: `area_name = "Alamance, NC"`.
-> Caused by error in `get()`:
-> ! object 'enrollment' not found
-> Backtrace:
->   1. global plot.county(PST01_combined)
->  12. base::get(var_name)
-> Error in summarize(group_by(filter(df$county_data, state == state_val),  : 
->  
-> ℹ In group 1: `area_name = "Alamance, NC"`.
-> Caused by error in `get()`:
-> ! object 'enrollment' not found
+> Error in `summarize()`: ℹ In argument: `mean_value = mean(get(var_name))`. ℹ In group 1: `area_name = "Alamance, NC"`. Caused by error in `get()`: ! object 'enrollment' not found Backtrace: 1. global plot.county(PST01_combined) 12. base::get(var_name) Error in summarize(group_by(filter(df\$county_data, state == state_val), :
+>
+> ℹ In group 1: `area_name = "Alamance, NC"`. Caused by error in `get()`: ! object 'enrollment' not found
 
-### 4. Specifying the state to be "NY", the group being the "top", and the number looked at being "10".
-```{r}
+4. Specifying the state to be "NY", the group being the "top", and the number looked at being "10".
+
+```{r Plot NY top 10 population}
 plot.county(PST01_combined, state_val = "NY", var_name = "population", group = "top", row_display = 10)
 ```
-
