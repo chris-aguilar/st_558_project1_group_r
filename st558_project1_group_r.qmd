@@ -356,20 +356,16 @@ if(group == "top") {
 # obtain the top or bottom x number of area_names where the number is given by the user or default and filter the data to only include the top or bottom area names for graphing
   Display_num_subset <- head(sorted_data, row_display)
 
-  # sorting plot order depending on ascending or descending
-  # Sorting data 
-if(group == "top") {
-  g_county <- Display_num_subset |> ggplot(aes(y = forcats::fct_reorder(area_name, mean_value), x = mean_value))
-} else if(group == "bottom") {
-  g_county <- Display_num_subset |> ggplot(aes(y = forcats::fct_reorder(area_name, desc(mean_value)), x = mean_value))
-} else {
-  stop("group must be in one of c('top', 'bottom')")
-}
-  g_county + 
-    geom_col() +
-    xlab(paste("Average", var_name)) +
-    ylab("County") +
-    labs(title = paste("Average", var_name, "by county in", state_val), subtitle = str_to_sentence(paste(group, row_display, "counties")))
+  # obtaining data corresponding to the top/bottom counties of interest
+  counties_of_interest <- df$county_data |> semi_join(Display_num_subset, by = join_by(area_name))
+  
+  counties_of_interest |> 
+    ggplot(aes(x = year, y = get(var_name), color = area_name)) + 
+    geom_line() +
+    xlab("Year") +
+    ylab(str_to_title(str_replace(get("var_name"), pattern = "_", replacement = " "))) +
+    labs(title = paste(str_to_title(paste(var_name, "by county")), "in", state_val), 
+         subtitle = str_to_sentence(paste(group, row_display, "counties")))
 
 }
 
