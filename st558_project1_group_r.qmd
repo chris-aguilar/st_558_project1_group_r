@@ -53,6 +53,7 @@ census_county_lvl <- census_county_lvl |>
 # Making reference table
 # Upper casing state names for table join later
 states_upper_case <- c(toupper(state.name), "DISTRICT OF COLUMBIA")
+
 states_division <- c(state.division, factor("South Atlantic"))
 
 state_ref_table <- data.frame(state = states_upper_case, division = states_division)
@@ -168,6 +169,7 @@ assign_state_divisions <- function(census_non_county_lvl) {
   # Making reference table
   # Upper casing state names for table join later
   states_upper_case <- c(toupper(state.name), "DISTRICT OF COLUMBIA") # DC doesn't exist in this vector, so we add it
+  
   states_division <- c(state.division, factor("South Atlantic")) # Adding DC's division level to factor vector of divisions
   
   state_ref_table <- data.frame(state = states_upper_case, division = states_division)
@@ -487,19 +489,19 @@ plot.state(PST01_combined, "population")
 
 Next, we will use the `plot.county` function to generate the plot of `PST01_combined`'s county data frame using the below specified criteria.
 
-1. Specify the state to be "CA", the group to be the "top", and the number looked at being "15".
+1.  Specify the state to be "CA", the group to be the "top", and the number looked at being "15".
 
 ```{r Plot CA top 15 population}
 plot.county(PST01_combined, state_val = "CA", var_name = "population", group = "top", row_display = 15)
 ```
 
-2. Specify the state to be "TX", the group to be the "top", and the number looked at being "4".
+2.  Specify the state to be "TX", the group to be the "top", and the number looked at being "4".
 
 ```{r Plot TX top 4 population}
 plot.county(PST01_combined, state_val = "TX", var_name = "population", group = "top", row_display = 4)
 ```
 
-3. Using defaults only.
+3.  Using defaults only.
 
 Using the default value of "enrollment" for the variable "population" renders an error message. The funciton has been commented out to allow the rest of the program to work and permitting rendering, committing, and pushing the program to GitHub.
 
@@ -511,8 +513,148 @@ Using the default value of "enrollment" for the variable "population" renders an
 >
 > ℹ In group 1: `area_name = "Alamance, NC"`. Caused by error in `get()`: ! object 'enrollment' not found
 
-4. Specifying the state to be "NY", the group being the "top", and the number looked at being "10".
+4.  Specifying the state to be "NY", the group being the "top", and the number looked at being "10".
 
 ```{r Plot NY top 10 population}
 plot.county(PST01_combined, state_val = "NY", var_name = "population", group = "top", row_display = 10)
 ```
+
+# What "putting it all together" should be?
+
+Going back through the lectures, professor Post mentioned that functions should be self-contained, which is a similiar concept in other computer programming courses like SAS. 
+
+With this in mind, we need/should combine the separate functions and their supporting code associated with preparing the data into one "parent" function. 
+
+My attempt at this using the EDU01a URL is below. Currently getting the error:  
+
+> ℹ Use `spec()` to retrieve the full column specification for this data.
+ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
+Error in census_data[county_idx, ] : incorrect number of dimensions
+
+```{r Prepare Census Data Wrapper (all code)}
+
+prepare_census_data <- function(url, default_var_name = "value") {
+
+
+# step 1 and 2  
+
+
+  df <- read_csv(url) # main df for use throughout data manipulation
+
+  read_and_pivot <- function(df, default_var_name) {
+  
+  census_data <- df |> 
+    select(Area_name, STCOU, ends_with("D")) |> # step 1
+    rename(area_name = Area_name) |> 
+    pivot_longer(ends_with("D"), values_to = default_var_name) # step 2
+  
+  census_data
+}
+
+
+# step 3. Extract the survey year. 
+
+
+  extract_survey_and_year <- function(census_data) {
+    res <- census_data |>
+    mutate(
+        measurement = substr(name, 1, 7),
+        # year = paste0("19", substr(name, 8, 9)) |> as.integer())
+        year = ifelse(
+          substr(name, 8, 8) %in% c("3", "4", "5", "6", "7", "8", "9"), paste0("19", substr(name, 8, 9)) |> as.integer(),
+          ifelse(
+            substr(name, 8, 8) %in% c("0", "1", "2"), paste0("20", substr(name, 8, 9)) |> as.integer(),
+            NA)
+          )
+    )
+  
+    res
+}
+
+
+# step 4. Create state indices for splitting the data between county and non-county data frames. 
+
+
+  county_idx <-  grep(pattern = ", \\w\\w", census_data$area_name)
+
+
+# county-level data
+# using indices for county level, and omitting indices for non-county level data
+
+
+  census_county_lvl <- census_data[county_idx, ]
+
+  census_non_county_lvl <- census_data[-county_idx, ]
+
+
+# New classes for new methods later
+
+
+  class(census_county_lvl) <- c("county", class(census_county_lvl))
+
+  class(census_non_county_lvl) <- c("state", class(census_non_county_lvl))
+
+
+# step 5
+# appending 2-char state abbreviation for county level data
+# stringr package allows us to index in reverse, no user defined function needed
+
+
+  census_county_lvl <- census_county_lvl |> 
+    mutate(state = stringr::str_sub(area_name, -2))
+
+  extract_state_from_area <- function(census_county_lvl) {
+    res <- census_county_lvl |> 
+      mutate(state = stringr::str_sub(area_name, -2)) # grab last two characters
+  
+    res
+}
+
+
+# step 6
+# area_name has two versions of DC, which is in division 5. We'll standardize this. We assume these aren't true duplicates since STCOUs are different for upper, lowercase versions of DC.
+# We'll also use built-in R variables to make a reference table for the regions.
+# This will make appending division to our non-county level data simpler.
+# Making reference table
+# Upper casing state names for table join later
+
+
+  assign_state_divisions <- function(census_non_county_lvl) {
+
+    states_upper_case <- c(toupper(state.name), "DISTRICT OF COLUMBIA")
+
+    states_division <- c(state.division, factor("South Atlantic"))
+
+    state_ref_table <- data.frame(state = states_upper_case, division = states_division)
+
+
+# We'll join our state reference table to our census data to append divisions.
+# We do this by standardizing DC as upper case for the keys. Then, since factors can be a bit tricky, we convert to character type first. Lastly, any NAs are changed to ERROR as these don't correspond to any divisions, just "UNITED STATES"
+
+
+  res <- census_non_county_lvl |> 
+    mutate(area_name = toupper(area_name)) |> 
+    left_join(state_ref_table, by = join_by(area_name == state)) |>
+    mutate(division = as.character(division),
+           division = if_else(is.na(division), "ERROR", division))
+
+  state_res <- assign_state_divisions(census_non_county_lvl)
+  
+  full_res <- list(county_data = county_res, state_data = state_res)
+  
+  full_res
+}
+ 
+# final code
+    res <- read_and_pivot(url, default_var_name) |> # step 1, 2 
+      extract_survey_and_year() |> # step 3
+      split_census_data() # step 4, 5, 6
+  
+    res
+}
+
+# EDU01a_df <- prepare_census_data("https://www4.stat.ncsu.edu/~online/datasets/EDU01a.csv", "enrollment")
+
+# EDU01a_df
+```
+
