@@ -5,19 +5,30 @@ format: html
 editor: visual
 ---
 
+# Code Development and Testing
+
 ## Manual read-in
 
-For this project, we'll want to read in and prepare the data for analysis. Then we'll actually conduct the analysis. But we'll want to create functions for each step to make the code easy to maintain and debug and reuse as necessary.
+For this project, we'll want to read in and prepare the data for analysis. Then we'll conduct a summary analysis using data plots. 
+
+In order to generate the main functions properly, we will create functions that execute data processing step that will make the code easy to maintain, debug, and reuse as necessary.
 
 First, we'll read in and prep the data manually. Afterward, we'll put those manual steps into a function.
 
-```{r data processing}
+Before we can start using tidyverse functions, we need to ensure we call them into our work library for R to use. 
+
+```{r create libraries for use}
 library(readr)
 library(dplyr)
 library(tidyr)
 library(ggplot2)
+library(stringr)
+```
 
-# step 1 and 2 and 3
+For steps 1, 2 and 3 we will need to read in the .csv file, structure the data to ensure each value of interest only has one observation, and ensure we extract the year of each value from the survey code.
+
+```{r data processing development, steps 1 through 3}
+
 census_data <- read_csv("https://www4.stat.ncsu.edu/~online/datasets/EDU01a.csv") |> 
   select(Area_name, STCOU, ends_with("D")) |> # step 1
   rename(area_name = Area_name) |> 
@@ -26,7 +37,10 @@ census_data <- read_csv("https://www4.stat.ncsu.edu/~online/datasets/EDU01a.csv"
     measurement = substr(name, 1, 7),
     year = paste0("19", substr(name, 8, 9)) |> as.integer()) # step 3
 
-# step 4
+```
+
+For step 4 we will index the data to extract the state from `area_name` to generate `state` as a separate variable. To do this we will generate a variable `county_idx` that will allow us to use `[county_idx, ]` and `[-county_idx, ]` to generate the county and non-county data, then classify them as "county" and "state".
+```{r data procesing development, step 4}
 # Grabbing state indices so we can split the data between county/non-county data
 county_idx <-  grep(pattern = ", \\w\\w", census_data$area_name)
 
@@ -38,20 +52,24 @@ census_non_county_lvl <- census_data[-county_idx, ]
 # New classes for new methods later
 class(census_county_lvl) <- c("county", class(census_county_lvl))
 class(census_non_county_lvl) <- c("state", class(census_non_county_lvl))
+```
 
-# step 5
+In Step 5 we use the class variables generated in Step 4 to further develop our county data frame. Using the `stringr` package allows us to append the 2-character state abbreviation for county level data while eliminating the need to generate a user defined function. 
+```{r data procesing development, step 5}
 # appending 2-char state abbreviation for county level data
-# stringr package allows us to index in reverse, no user defined function needed
 census_county_lvl <- census_county_lvl |> 
   mutate(state = stringr::str_sub(area_name, -2))
+```
 
-# step 6
-# area_name has two versions of DC, which is in division 5. We'll standardize this. We assume these aren't true duplicates since STCOUs are different for upper, lowercase versions of DC.
-# We'll also use built-in R variables to make a reference table for the regions.
-# This will make appending division to our non-county level data simpler.
 
-# Making reference table
-# Upper casing state names for table join later
+In Step 6 we will use built-in R variables to assign region information to the observations. 
+
+There are two versions of DC (uppercase and lowercase). The STCOUs are different for the uppercase and lowercase versions of DC so we cannot assume these are duplicate observations. Because of this we've standardized DC. 
+
+Additionally, we used upper casing state names for use in a table join to further shape the `census_non_county_lvl` data frame. 
+
+```{r data procesing development, step 6}
+
 states_upper_case <- c(toupper(state.name), "DISTRICT OF COLUMBIA")
 
 states_division <- c(state.division, factor("South Atlantic"))
@@ -68,9 +86,10 @@ census_non_county_lvl <- census_non_county_lvl |>
          division = if_else(is.na(division), "ERROR", division))
 ```
 
+
 ## Creating data pre-processing functions
 
-We'll create some functions to perform the following steps:
+Now that we've derived the different data framing steps, we'll create some functions to automate the data cleaning process:
 
 1.  Read in the census data and select `Area_name`, `STCOU`, and any column ending in "D". We'll also rename `Area_name` to `area_name`.
 2.  Convert the data into long format, keeping `Area_name` as the reference for our enrollment values.
@@ -133,16 +152,33 @@ extract_survey_and_year <- function(df) {
 
 ```
 
+### Step 4
+
+Here we create an index (`county_idx`) of `area_name` for splitting the observations into county and non-county categories. We will use `census_county_lvl` for our county data, and `census_non_county_lvl` for our state data. We then convert these data frames into "classes" using the `class()` function for use in Steps 5 and 6. 
+
+```{r}
+county_idx <-  grep(pattern = ", \\w\\w", census_data$area_name)
+
+census_county_lvl <- census_data[county_idx, ]
+
+census_non_county_lvl <- census_data[-county_idx, ]
+
+class(census_county_lvl) <- c("county", class(census_county_lvl))
+
+class(census_non_county_lvl) <- c("state", class(census_non_county_lvl))
+```
+
+
 ### Step 5
 
-The data from step 3 above will result in a data frame with county-level and non-county level data, each of which will require different prep methods. Here, we'll create a function to extract the county-level state from `area_name`.
+The data from step 3 above will result in a data frame with county-level and non-county level data, each of which will require different prep methods. Here, we'll create a function using `stringr` to extract the county-level state from `area_name`.
 
 ```{r step 5}
 
-library(stringr)
-
 # stringr's str_sub allows us to substring in reverse, easier than base R's substr
 extract_state_from_area <- function(census_county_lvl) {
+  library(stringr) 
+  
   res <- census_county_lvl |> 
     mutate(state = stringr::str_sub(area_name, -2)) # grab last two characters
   
@@ -155,19 +191,12 @@ extract_state_from_area <- function(census_county_lvl) {
 
 For non-county level data, we'll create a function that assigns a variable that corresponds to the \[state's classification of division\].(https://en.wikipedia.org/wiki/List_of_regions_of_the_United_States)
 
-The approach we take will make use of some built-in state data in R.
+The approach we take will make use of some built-in state data in R to join with our data frame to assign the states to a division. We explicitly cohersed the divisions to character type to ensure the `mutate` function worked correctly.Additionally, we assigned the value "ERROR" to any "NA" that result from an area_name not being assigned to a division. 
 
 ```{r step 6}
 
-# step 6
-# area_name has two versions of DC, uppercase and lowercase, which is in division 5. We'll standardize this. 
-# We assume these aren't true duplicates since STCOUs are different for upper, lowercase versions of DC.
-# We'll also use built-in R variables to make a reference table for the regions.
-# This will make appending division to our non-county level data simpler.
-
 assign_state_divisions <- function(census_non_county_lvl) {
-  # Making reference table
-  # Upper casing state names for table join later
+
   states_upper_case <- c(toupper(state.name), "DISTRICT OF COLUMBIA") # DC doesn't exist in this vector, so we add it
   
   states_division <- c(state.division, factor("South Atlantic")) # Adding DC's division level to factor vector of divisions
@@ -190,9 +219,294 @@ assign_state_divisions <- function(census_non_county_lvl) {
 
 ### Putting steps 4, 5, and 6 together
 
-We mentioned that the data has county-level and non-county-level data that needs to be addressed separately. Functions for steps 5 and 6 do this. We now address step 4, which is splitting the data into county and non-county level data. We'll combine this right into steps 5 and 6 below.
+We mentioned above that the data has county-level and non-county-level data that needs to be addressed separately. The data frames we created in Step 4 will not be combined with the functions developed in Steps 5 and 6 to split the data into two data frames inside of a main object. 
 
 ```{r steps 4 5 6}
+
+split_census_data <- function(census_data) {
+  
+  # use variables created in step 4
+  
+  county_idx <-  grep(pattern = ", \\w\\w", census_data$area_name)
+  
+  census_county_lvl <- census_data[county_idx, ]
+
+  census_non_county_lvl <- census_data[-county_idx, ]
+  
+  class(census_county_lvl) <- c("county", class(census_county_lvl))
+
+    class(census_non_county_lvl) <- c("state", class(census_non_county_lvl))
+  
+  # apply step 5 to generate county data frame
+  
+  county_res <- extract_state_from_area(census_county_lvl)
+  
+  # apply step 6 to generate state data frame
+  
+  state_res <- assign_state_divisions(census_non_county_lvl)
+  
+  #combine data frames into census data object 
+  
+  full_res <- list(county_data = county_res, state_data = state_res)
+  
+  full_res
+}
+
+
+```
+
+### Combining steps 1-6 in a wrapper function
+
+We'll now create a wrapper function that combines the functions created above into one call. It'll take as input the data's url, and an optional argument for the `enrollment` column name created by `pivot_longer`.
+
+```{r wrapper function}
+
+
+prepare_census_data <- function(url, default_var_name = "enrollment") {
+  
+  res <- read_and_pivot(url, default_var_name) |> # step 1, 2 
+    extract_survey_and_year() |> # step 3
+    split_census_data() # step 4, 5, 6
+  
+  res
+}
+
+```
+
+### Using wrapper function for Census data
+
+Now that we have developed our data preparation function, we need to test it. 
+
+Processing the URLs
+
+1.  `https://www4.stat.ncsu.edu/~online/datasets/EDU01a.csv`
+2.  `https://www4.stat.ncsu.edu/~online/datasets/EDU01b.csv`
+
+```{r}
+census_edu01a <- prepare_census_data("https://www4.stat.ncsu.edu/~online/datasets/EDU01a.csv", "enrollment")
+
+census_edu01b <- prepare_census_data("https://www4.stat.ncsu.edu/~online/datasets/EDU01b.csv", "enrollment")
+```
+
+Both of these files have read in correctly, so we can move on to combining the two data frames into one using the user generated functon `combine_data`. 
+```{r data combining development}
+
+combine_data <- function(list_of_dfs1, list_of_dfs2) {
+  
+  # county
+  county_res <- bind_rows(list_of_dfs1$county_data, list_of_dfs2$county_data)
+  
+  # state
+  state_res <- bind_rows(list_of_dfs1$state_data, list_of_dfs2$state_data)
+  
+  res <- list(county_data = county_res, state_data = state_res)
+  
+  res
+}
+```
+
+
+
+
+We now call our `combine_data` function to save the results of the prepared `EDU01a` and `EDU01b` data sets into a two-element list of dataframes, where each element of the list corresponds to combined county-level and state-level data.
+
+```{r data ready for use}
+
+census_data <- combine_data(census_edu01a, census_edu01b)
+
+census_data
+```
+
+We are now ready to analyze this data.
+
+## Class State plotting function
+
+For the State class plot we've developed a function that maps the mean value of the variable of interest, in this case `enrollment`, across the years for each Division. There are twenty "Error" values for Division that have been removed as part of generating the subset prior to plotting the data.
+
+```{r state class plot fn development}
+
+# specify data frame, default variable name, 
+plot.state <- function(df, var_name = "enrollment"){
+  library(ggplot2)
+  
+# create subset data for plotting
+state_variable_plot <- df$state_data |>
+
+# remove the error values
+    filter(division != "ERROR") |>  
+
+# subset the data to the variables of interest
+    group_by(division, year) |> 
+  #create the mean statistic for plotting
+    summarize("mean_value" = mean(get(var_name)))
+
+# generate the plot of year vs mean
+  g_state <- ggplot(state_variable_plot, aes(year, mean_value, color=division)) 
+
+# plot the division values
+  g_state + 
+    geom_line() +
+    labs(title = paste("Average yearly", var_name, "by state division")) +
+    xlab("Year") +
+    ylab(paste("Average", var_name))
+
+}
+
+# Calling on a dataframe of class "state" with a default variable-of-interest called "enrollment"
+plot.state(census_data)
+
+```
+
+## Class County plotting function
+
+Next we created a similar plotting function with more flexibility. The county plotting function allows the user to specify a state of interest and determine how many of the top or bottom counties in the state they want to observe the average enrollment for.
+
+```{r county class plot fn development}
+
+# specify state, top/bottom, and number of results displayed in the function
+plot.county <- function(df, var_name = "enrollment", state_val = "NC", group = "top", row_display = 5) {
+  library(ggplot2)
+  library(stringr)
+  
+# extract the county df from the census_data object
+  county_variable_subset <-  df$county_data |>
+
+# filter the data to show only the state specified in the function string
+    filter(state == state_val) |>
+    
+# find the overall mean of the statistic for each area name
+    group_by(area_name) |> 
+    summarize("mean_value" = mean(get(var_name))) 
+  
+# Sort the data to display the enrollment means from largest to smallest when "top" is chosen, or from smallets to largest when "bottom" is chosen. 
+
+if(group == "top") {
+  sorted_data <- county_variable_subset |> arrange(desc(mean_value))
+} else if(group == "bottom") {
+  sorted_data <- county_variable_subset |> arrange(mean_value)
+} else {
+  stop("group must be in one of c('top', 'bottom')")
+}
+  
+# obtain the top or bottom x number of area_names where the number is given by the user or default and filter the data to only include the top or bottom area names for graphing
+  
+  Display_num_subset <- head(sorted_data, row_display)
+
+  # obtaining data corresponding to the top/bottom counties of interest
+  
+  counties_of_interest <- df$county_data |> semi_join(Display_num_subset, by = join_by(area_name))
+  
+  counties_of_interest |> 
+    ggplot(aes(x = year, y = get(var_name), color = area_name)) + 
+    geom_line() +
+    xlab("Year") +
+    ylab(str_to_title(str_replace(get("var_name"), pattern = "_", replacement = " "))) +
+    labs(title = paste(str_to_title(paste(var_name, "by county")), "in", state_val), 
+         subtitle = str_to_sentence(paste(group, row_display, "counties")))
+
+}
+
+# Calling on a dataframe of class "county" with a default values that produce the top 5 enrollment counties in NC. 
+plot.county(census_data)
+
+```
+
+We can now utilize the above methods `plot.state` and `plot.county` to create time series plots for our numeric values of interest, and plots of the average value of interest by county.
+
+# Putting it together
+
+Throughout this report we've generated helper functions, tested them independently, and combined the functions header strings into a wrapper function.
+
+This has been successful, so now it is time to compile the multiple functions and their supporting code to ensure the data processing and data combining functions work independently if we were to clear everything out from the R Studio environment tab. 
+
+After processing the data, we will combine he data using the `combine_data` user generated function. 
+
+## Data processing
+
+```{r Prepare Census Data Wrapper (all code)}
+
+prepare_census_data <- function(url, default_var_name = "enrollment") {
+
+# create libraries for package use
+
+
+library(readr)
+library(dplyr)
+library(tidyr)
+
+
+# # step 1 and 2 and 3. Read URL into census_data df, then mutatae to create single observations for each survey code ending with "D".
+
+
+read_and_pivot <- function(url, default_var_name = "value") {
+  
+  census_data <- read_csv(url) |> 
+    select(Area_name, STCOU, ends_with("D")) |> # step 1
+    rename(area_name = Area_name) |> 
+    pivot_longer(ends_with("D"), values_to = default_var_name) # step 2
+  
+  census_data
+}
+
+
+# extract the year from the survey code
+
+
+extract_survey_and_year <- function(df) {
+  
+  res <- df |>
+  mutate(
+      measurement = substr(name, 1, 7),
+      # year = paste0("19", substr(name, 8, 9)) |> as.integer())
+      year = ifelse(
+        substr(name, 8, 8) %in% c("3", "4", "5", "6", "7", "8", "9"), paste0("19", substr(name, 8, 9)) |> as.integer(),
+        ifelse(
+          substr(name, 8, 8) %in% c("0", "1", "2"), paste0("20", substr(name, 8, 9)) |> as.integer(),
+          NA)
+        )
+  )
+  
+  res
+}
+
+
+# separate the state data from the area data
+
+
+extract_state_from_area <- function(census_county_lvl) {
+  res <- census_county_lvl |> 
+    mutate(state = stringr::str_sub(area_name, -2)) # grab last two characters
+  
+  res
+}
+
+
+# assign the state divisions to the non-county data frame
+
+assign_state_divisions <- function(census_non_county_lvl) {
+  # Making reference table
+  # Upper casing state names for table join later
+  states_upper_case <- c(toupper(state.name), "DISTRICT OF COLUMBIA") # DC doesn't exist in this vector, so we add it
+  
+  states_division <- c(state.division, factor("South Atlantic")) # Adding DC's division level to factor vector of divisions
+  
+  state_ref_table <- data.frame(state = states_upper_case, division = states_division)
+  
+  # We'll join our state reference table to our census data to append divisions.
+  # We do this by standardizing DC as upper case for the keys. Then, since factors can be a bit tricky, we convert to character type first. Lastly, any NAs are changed to ERROR as these don't correspond to any state divisions
+  
+  res <- census_non_county_lvl |> 
+    mutate(area_name = toupper(area_name)) |> 
+    left_join(state_ref_table, by = join_by(area_name == state)) |>
+    mutate(division = as.character(division),
+           division = if_else(is.na(division), "ERROR", division))
+  
+  res
+}
+
+
+# split the census data into state and county data frames
+
 
 split_census_data <- function(census_data) {
   
@@ -226,45 +540,20 @@ split_census_data <- function(census_data) {
   full_res
 }
 
-
-```
-
-### Combining steps 1-6 in a wrapper function
-
-We'll now create a wrapper function that combines the functions created above into one call. It'll take as input the data's url, and an optional argument for the `enrollment` column name created by `pivot_longer`.
-
-```{r wrapper function}
-
-
-prepare_census_data <- function(url, default_var_name = "enrollment") {
-  
   res <- read_and_pivot(url, default_var_name) |> # step 1, 2 
     extract_survey_and_year() |> # step 3
     split_census_data() # step 4, 5, 6
   
   res
+
 }
 
 ```
 
-### Using wrapper function for Census data
 
-We'll be calling our wrapper function above on the following two datasets:
+Next we will run our `combine_data` code that will allow us to use the function to combine the separate URL data sets into one object with separate data frames for state and county data. 
 
-1.  `https://www4.stat.ncsu.edu/~online/datasets/EDU01a.csv`
-2.  `https://www4.stat.ncsu.edu/~online/datasets/EDU01b.csv`
-
-Then we'll be combining the county- and state-level results from each appropriately.
-
-```{r combining data}
-
-# Reading in and prepping the two EDU01 census .csv files given
-
-census_edu01a <- prepare_census_data("https://www4.stat.ncsu.edu/~online/datasets/EDU01a.csv", "enrollment")
-
-census_edu01b <- prepare_census_data("https://www4.stat.ncsu.edu/~online/datasets/EDU01b.csv", "enrollment")
-
-# helper function to combine the two sets of data
+```{r Initiate combine data fn}
 combine_data <- function(list_of_dfs1, list_of_dfs2) {
   
   # county
@@ -277,27 +566,42 @@ combine_data <- function(list_of_dfs1, list_of_dfs2) {
   
   res
 }
+
+
+
 ```
 
-We now call our `combine_data` function to save the results of the prepared `EDU01a` and `EDU01b` data sets into a two-element list of dataframes, where each element of the list corresponds to combined county-level and state-level data.
 
-```{r data ready for use}
+Next, we will run each of the the census raw data URLs through our `prepare_census_data` function to generate data frames for combining into the `census_data` object we will be using for summary analysis.
 
+```{r Read in census data}
+
+# Reading in and prepping the two EDU01 census .csv files given
+
+census_edu01a <- prepare_census_data("https://www4.stat.ncsu.edu/~online/datasets/EDU01a.csv", "enrollment")
+
+census_edu01b <- prepare_census_data("https://www4.stat.ncsu.edu/~online/datasets/EDU01b.csv", "enrollment")
+
+```
+
+## Data combining
+
+Now that we have converted the raw data into usable tibbles we can process them through our `combine_data` function to generate the `census_data` object.
+
+
+```{r Combining census data}
 census_data <- combine_data(census_edu01a, census_edu01b)
 
 census_data
 ```
 
-We are now ready to analyze this data.
+### State Plot
 
-# Class State plotting function
+For consistency sakes, we will re-list the code for our `plot.state` function here before applying it to the `census_data` object. 
 
-For the State class plot we've developed a function that maps the mean value of the variable of interest, in this case `enrollment`, across the years for each Division. There are twenty "Error" values for Division that have been removed as part of generating the subset prior to plotting the data.
-
-```{r state class plot fn development}
-
-# specify data frame, default variable name, 
+```{r}
 plot.state <- function(df, var_name = "enrollment"){
+  library(ggplot2)
   
 # create subset data for plotting
 state_variable_plot <- df$state_data |>
@@ -321,20 +625,22 @@ state_variable_plot <- df$state_data |>
     ylab(paste("Average", var_name))
 
 }
-
-# Calling on a dataframe of class "state" with a default variable-of-interest called "enrollment"
-plot.state(census_data)
-
 ```
 
-# Class County plotting function
+Using the `plot.state` function on `census_data` generates the plot of the `state_data` frame. This plot provides useful information that can be used to generate research questions to determine what cause such a contrast between the top 4 divisions from the bottom 5.
 
-Next we created a similar plotting function with more flexibility. The county plotting function allows the user to specify a state of interest and determine how many of the top or bottom counties in the state they want to observe the average enrollment for.
+```{r census_data state plot}
+plot.state(census_data)
+```
 
-```{r county class plot fn development}
+### County plots
 
-# specify state, top/bottom, and number of results displayed in the function
+Like with the `plot.state` function we will re-list the `plot.county` function code before applying it to the `census_data` object.
+
+
+```{r census_data county plot}
 plot.county <- function(df, var_name = "enrollment", state_val = "NC", group = "top", row_display = 5) {
+  library(ggplot2)
 
 # extract the county df from the census_data object
   county_variable_subset <-  df$county_data |>
@@ -347,6 +653,7 @@ plot.county <- function(df, var_name = "enrollment", state_val = "NC", group = "
     summarize("mean_value" = mean(get(var_name))) 
   
 # Sort the data to display the enrollment means from largest to smallest when "top" is chosen, or from smallets to largest when "bottom" is chosen. 
+
 if(group == "top") {
   sorted_data <- county_variable_subset |> arrange(desc(mean_value))
 } else if(group == "bottom") {
@@ -356,10 +663,14 @@ if(group == "top") {
 }
   
 # obtain the top or bottom x number of area_names where the number is given by the user or default and filter the data to only include the top or bottom area names for graphing
+  
   Display_num_subset <- head(sorted_data, row_display)
 
   # obtaining data corresponding to the top/bottom counties of interest
+  
   counties_of_interest <- df$county_data |> semi_join(Display_num_subset, by = join_by(area_name))
+  
+  library(stringr)
   
   counties_of_interest |> 
     ggplot(aes(x = year, y = get(var_name), color = area_name)) + 
@@ -370,49 +681,7 @@ if(group == "top") {
          subtitle = str_to_sentence(paste(group, row_display, "counties")))
 
 }
-
-# Calling on a dataframe of class "county" with a default values that produce the top 5 enrollment counties in NC. 
-plot.county(census_data)
-
 ```
-
-We can now utilize the above methods `plot.state` and `plot.county` to create time series plots for our numeric values of interest, and plots of the average value of interest by county.
-
-# Putting it together
-
-## Data processing
-
-First, we will run the census raw data URLs through our `prepare_census_data` function to generate data frames for combining into our object for analysis.
-
-```{r Read in census data}
-
-# Reading in and prepping the two EDU01 census .csv files given
-
-census_edu01a <- prepare_census_data("https://www4.stat.ncsu.edu/~online/datasets/EDU01a.csv", "enrollment")
-
-census_edu01b <- prepare_census_data("https://www4.stat.ncsu.edu/~online/datasets/EDU01b.csv", "enrollment")
-
-```
-
-## Data combining
-
-Processing our data frames through the `combine_data` function provides us with the single object we need for analysis.
-
-```{r Combining census data}
-census_data <- combine_data(census_edu01a, census_edu01b)
-
-census_data
-```
-
-### State Plot
-
-Using the `plot.state` function on `census_data` generates the plot of the `state_data` frame. This plot provides useful information that can be used to generate research questions to determine what cause such a contrast between the top 4 divisions from the bottom 5.
-
-```{r Plot division by year and avg population}
-plot.state(census_data)
-```
-
-### County plots
 
 Using the `plot.county` function on `county_data` to generate plots using the below specified criteria provides useful information that can be used to generate research questions.
 
@@ -442,9 +711,11 @@ plot.county(census_data, state_val = "PA", var_name = "enrollment", group = "top
 
 ## Read in similar data sets and apply the developed functions.
 
+Now that we have tested and validated that our code works effectively on the data sets it was modeled to read, we will further test the code on another 4 raw data URLs generated by a separate census surveys.  
+
 ### Data processing
 
-Processing the below URLs through the data processing function provides us with data frames `PST01a` through `PST01d` that we will combine into one object with data frames `state_data` and `county_data`.
+Processing the below URLs through the `prepare_census_data` function provides us with data frames `PST01a` through `PST01d` that we will combine into object `PST01_combined` with data frames `state_data` and `county_data`.
 
 -   https://www4.stat.ncsu.edu/\~online/datasets/PST01a.csv
 
@@ -503,15 +774,11 @@ plot.county(PST01_combined, state_val = "TX", var_name = "population", group = "
 
 3.  Using defaults only.
 
-Using the default value of "enrollment" for the variable "population" renders an error message. The funciton has been commented out to allow the rest of the program to work and permitting rendering, committing, and pushing the program to GitHub.
+Using the default value of "enrollment" for the variable "population" renders an error message. Because of this, we have listed the default value to be "population" to show that the code is working properly otherwise. 
 
 ```{r Default plot for NC top 5 enrollment2}
-# plot.county(PST01_combined)
+plot.county(PST01_combined, "population")
 ```
-
-> Error in `summarize()`: ℹ In argument: `mean_value = mean(get(var_name))`. ℹ In group 1: `area_name = "Alamance, NC"`. Caused by error in `get()`: ! object 'enrollment' not found Backtrace: 1. global plot.county(PST01_combined) 12. base::get(var_name) Error in summarize(group_by(filter(df\$county_data, state == state_val), :
->
-> ℹ In group 1: `area_name = "Alamance, NC"`. Caused by error in `get()`: ! object 'enrollment' not found
 
 4.  Specifying the state to be "NY", the group being the "top", and the number looked at being "10".
 
@@ -519,149 +786,5 @@ Using the default value of "enrollment" for the variable "population" renders an
 plot.county(PST01_combined, state_val = "NY", var_name = "population", group = "top", row_display = 10)
 ```
 
-# What "putting it all together" should be?
 
-Going back through the lectures, professor Post mentioned that functions should be self-contained, which is a similiar concept in other computer programming courses like SAS. 
-
-With this in mind, we need/should combine the separate functions and their supporting code associated with preparing the data into one "parent" function. 
-
-My attempt at this using the EDU01a URL is below. Currently getting the error:  
-
-> ℹ Use `spec()` to retrieve the full column specification for this data.
-ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
-Error in census_data[county_idx, ] : incorrect number of dimensions
-
-```{r Prepare Census Data Wrapper (all code)}
-
-prepare_census_data <- function(url, default_var_name = "value") {
-
-
-# step 1 and 2  
-
-
-  df <- read_csv(url) # main df for use throughout data manipulation
-
-  read_and_pivot <- function(df, default_var_name) {
-    df |> 
-      select(Area_name, STCOU, ends_with("D")) |> # step 1
-      rename(area_name = Area_name) |> 
-      pivot_longer(ends_with("D"), values_to = default_var_name) # step 2
-  
-    census_data <- df
-}
-
-
-# step 3. Extract the survey year. 
-
-
-  extract_survey_and_year <- function(census_data) {
-    res <- census_data |>
-    mutate(
-        measurement = substr(name, 1, 7),
-        # year = paste0("19", substr(name, 8, 9)) |> as.integer())
-        year = ifelse(
-          substr(name, 8, 8) %in% c("3", "4", "5", "6", "7", "8", "9"), paste0("19", substr(name, 8, 9)) |> as.integer(),
-          ifelse(
-            substr(name, 8, 8) %in% c("0", "1", "2"), paste0("20", substr(name, 8, 9)) |> as.integer(),
-            NA)
-          )
-    )
-  
-    res
-}
-
-
-# step 4. Create state indices for splitting the data between county and non-county data frames. 
-
-
-  split_census_data <- function(census_data) {
-
-    county_idx <-  grep(pattern = ", \\w\\w", census_data$area_name)
-
-
-# county-level data
-# using indices for county level, and omitting indices for non-county level data
-
-
-    census_county_lvl <- census_data[county_idx, ]
-
-    census_non_county_lvl <- census_data[-county_idx, ]
-
-
-# New classes for new methods later
-
-
-    class(census_county_lvl) <- c("county", class(census_county_lvl))
-
-    class(census_non_county_lvl) <- c("state", class(census_non_county_lvl))
-
-
-# step 5
-# appending 2-char state abbreviation for county level data
-# stringr package allows us to index in reverse, no user defined function needed
-
-
-  census_county_lvl <- census_county_lvl |> 
-    mutate(state = stringr::str_sub(area_name, -2))
-
-  extract_state_from_area <- function(census_county_lvl) {
-    res <- census_county_lvl |> 
-      mutate(state = stringr::str_sub(area_name, -2)) # grab last two characters
-  
-  county_res <- extract_state_from_area(census_county_lvl)
-
-}
-  
-
-# step 6
-# area_name has two versions of DC, which is in division 5. We'll standardize this. We assume these aren't true duplicates since STCOUs are different for upper, lowercase versions of DC.
-# We'll also use built-in R variables to make a reference table for the regions.
-# This will make appending division to our non-county level data simpler.
-# Making reference table
-# Upper casing state names for table join later
-
-
-  census_non_county_lvl <- census_non_county_lvl |> 
-    mutate(area_name = toupper(area_name)) |> 
-    left_join(state_ref_table, by = join_by(area_name == state)) |>
-    mutate(division = as.character(division),
-           division = if_else(is.na(division), "ERROR", division))
-
-  assign_state_divisions <- function(census_non_county_lvl) {
-
-    states_upper_case <- c(toupper(state.name), "DISTRICT OF COLUMBIA")
-
-    states_division <- c(state.division, factor("South Atlantic"))
-
-    state_ref_table <- data.frame(state = states_upper_case, division = states_division)
-
-  }
-
-   state_res <- assign_state_divisions(census_non_county_lvl)
-
-
-
-
-# We'll join our state reference table to our census data to append divisions.
-# We do this by standardizing DC as upper case for the keys. Then, since factors can be a bit tricky, we convert to character type first. Lastly, any NAs are changed to ERROR as these don't correspond to any divisions, just "UNITED STATES"
-
-  full_res <- list(county_data = county_res, state_data = state_res)
-  
-  full_res
-
-}
-
- 
-# putting the helper functions together to execute 
-    res <- read_and_pivot(url, default_var_name) |> # step 1, 2 
-      extract_survey_and_year() |> # step 3
-      split_census_data() # step 4, 5, 6
-  
-    res
-}
-
-# EDU01a_df <- prepare_census_data("https://www4.stat.ncsu.edu/~online/datasets/EDU01a.csv", "enrollment")
-
-# EDU01a_df
-```
 
